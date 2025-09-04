@@ -1,0 +1,269 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+    color: #fff;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+h1 {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    color: #4ecdc4;
+    text-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+}
+
+.tagline {
+    font-size: 1.2rem;
+    color: #ccc;
+}
+
+.card {
+    background: rgba(15, 25, 35, 0.8);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    border: 1px solid #2a4759;
+}
+
+.card-title {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+    color: #4ecdc4;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #a0d2db;
+}
+
+input {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 8px;
+    background: #1a2b3c;
+    border: 1px solid #2a4759;
+    color: #fff;
+    font-size: 1rem;
+}
+
+input:focus {
+    outline: none;
+    border-color: #4ecdc4;
+    box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.3);
+}
+
+button {
+    background: #4ecdc4;
+    color: #0f2027;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+button:hover {
+    background: #3bb4ac;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+button.secondary {
+    background: #2a4759;
+    color: #a0d2db;
+}
+
+button.secondary:hover {
+    background: #1c3342;
+}
+
+button.talk {
+    background: #ff6b6b;
+    color: white;
+    width: 100%;
+    padding: 20px;
+    font-size: 1.2rem;
+    margin-top: 20px;
+}
+
+button.talk:hover {
+    background: #ff5252;
+}
+
+button.talk.active {
+    background: #4ecdc4;
+    box-shadow: 0 0 20px rgba(78, 205, 196, 0.5);
+}
+
+.user-list {
+    list-style: none;
+    margin-top: 20px;
+}
+
+.user-list li {
+    padding: 12px 15px;
+    background: #1a2b3c;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-left: 3px solid #4ecdc4;
+}
+
+.user-list li i {
+    color: #4ecdc4;
+}
+
+.user-list li.talking {
+    border-left: 3px solid #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.user-list li.talking i {
+    color: #ff6b6b;
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 300px;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    background: #1a2b3c;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message {
+    padding: 10px 15px;
+    border-radius: 8px;
+    max-width: 80%;
+    word-wrap: break-word;
+}
+
+.message.self {
+    background: #4ecdc4;
+    color: #0f2027;
+    align-self: flex-end;
+}
+
+.message.other {
+    background: #2a4759;
+    color: #fff;
+    align-self: flex-start;
+}
+
+.message.system {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ccc;
+    align-self: center;
+    font-style: italic;
+}
+
+.chat-input {
+    display: flex;
+    gap: 10px;
+}
+
+.chat-input input {
+    flex: 1;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    padding: 10px 15px;
+    background: #1a2b3c;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ff6b6b;
+}
+
+.status.connected .status-dot {
+    background: #4ecdc4;
+    box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+}
+
+.instructions {
+    margin-top: 30px;
+    font-size: 0.9rem;
+    color: #a0d2db;
+    line-height: 1.6;
+}
+
+.hidden {
+    display: none;
+}
+
+.flex-row {
+    display: flex;
+    gap: 15px;
+}
+
+.flex-row > * {
+    flex: 1;
+}
+
+@media (max-width: 600px) {
+    .flex-row {
+        flex-direction: column;
+    }
+    
+    h1 {
+        font-size: 2rem;
+    }
+}
