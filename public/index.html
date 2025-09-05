@@ -2,262 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Voice Broadcast</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    header { background: #333; color: #fff; padding: 10px; }
-    .controls { margin: 10px; }
-    #participants { display: flex; flex-wrap: wrap; }
-    .participant { border: 1px solid #ccc; margin: 5px; padding: 10px; border-radius: 6px; }
-    .status { font-size: 0.9em; color: #555; }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Voice Chat Room</title>
 </head>
 <body>
-  <header>
-    <h1>Voice Broadcast</h1>
-  </header>
+  <h1>Voice Chat Room</h1>
 
-  <div class="controls">
-    <label>Room Name: <input type="text" id="room-name" placeholder="Enter room" /></label>
-    <label>User Name: <input type="text" id="user-name" placeholder="Enter your name" /></label>
-    <button id="join-btn">Join Room</button>
-    <button id="leave-btn" disabled>Leave Room</button>
-    <button id="mute-btn" disabled>Mute/Unmute</button>
+  <div>
+    <input id="roomName" placeholder="Enter Room Name" />
+    <input id="userName" placeholder="Enter Your Name" />
+    <button id="joinBtn">Join Room</button>
   </div>
 
-  <div id="status" class="controls">Status: Disconnected</div>
+  <div id="users"></div>
 
-  <div id="participants"></div>
-
-  <div class="controls">
-    <button id="debug-toggle">Toggle Debug Logs</button>
-  </div>
-
-  <pre id="debug-log" style="display:none; background:#f4f4f4; padding:10px; height:200px; overflow:auto;"></pre>
-
-  <!-- ✅ Use CDN for socket.io -->
-  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-
+  <!-- Load socket.io client from server -->
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    const joinBtn = document.getElementById('join-btn');
-    const leaveBtn = document.getElementById('leave-btn');
-    const muteBtn = document.getElementById('mute-btn');
-    const roomNameInput = document.getElementById('room-name');
-    const userNameInput = document.getElementById('user-name');
-    const statusEl = document.getElementById('status');
-    const participantsEl = document.getElementById('participants');
-    const debugLogEl = document.getElementById('debug-log');
-    const debugToggle = document.getElementById('debug-toggle');
+    // ✅ Automatically connect to the same host (Render URL)
+    const socket = io();
 
-    let socket;
-    let localStream;
-    let peers = {};
-    let currentRoom = '';
-    let currentUserName = '';
-    let isMuted = false;
-    let debugVisible = false;
+    const joinBtn = document.getElementById('joinBtn');
+    const roomNameInput = document.getElementById('roomName');
+    const userNameInput = document.getElementById('userName');
+    const usersDiv = document.getElementById('users');
 
-    function updateConnectionStatus(msg, state) {
-      statusEl.textContent = 'Status: ' + msg;
-      statusEl.style.color = (state === 'connected') ? 'green' :
-                             (state === 'connecting') ? 'orange' : 'red';
-    }
+    joinBtn.addEventListener('click', () => {
+      const roomName = roomNameInput.value.trim();
+      const userName = userNameInput.value.trim();
 
-    function debugLog(msg) {
-      const line = `[${new Date().toLocaleTimeString()}] ${msg}\n`;
-      debugLogEl.textContent += line;
-      debugLogEl.scrollTop = debugLogEl.scrollHeight;
-      console.log(msg);
-    }
-
-    debugToggle.addEventListener('click', () => {
-      debugVisible = !debugVisible;
-      debugLogEl.style.display = debugVisible ? 'block' : 'none';
-    });
-
-    async function initLocalStream() {
-      try {
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        debugLog('Local microphone access granted');
-      } catch (err) {
-        debugLog('Error accessing mic: ' + err.message);
-        alert('Microphone access denied!');
-      }
-    }
-
-    function addParticipantToList(userId, userName, isLocal = false) {
-      let card = document.createElement('div');
-      card.className = 'participant';
-      card.id = 'participant-' + userId;
-      card.innerHTML = `<strong>${isLocal ? '(You) ' : ''}${userName}</strong>
-                        <div class="status" id="status-${userId}">Audio: Active</div>`;
-      participantsEl.appendChild(card);
-
-      // Attach audio tag for remote users
-      if (!isLocal) {
-        const audio = document.createElement('audio');
-        audio.id = `audio-${userId}`;
-        audio.autoplay = true;
-        audio.controls = false;
-        card.appendChild(audio);
-      }
-    }
-
-    function removeParticipantFromList(userId) {
-      const el = document.getElementById('participant-' + userId);
-      if (el) el.remove();
-    }
-
-    async function createPeerConnection(userId, userName, initiator) {
-      debugLog(`Creating peer connection with ${userName} (${userId})`);
-      const pc = new RTCPeerConnection({
-        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-      });
-      peers[userId] = pc;
-
-      // Local stream
-      if (localStream) {
-        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-      }
-
-      // ICE
-      pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          debugLog(`Sending ICE to ${userId}`);
-          socket.emit('ice-candidate', { to: userId, candidate: event.candidate });
-        }
-      };
-
-      // Remote stream
-      pc.ontrack = (event) => {
-        debugLog(`Received remote track from ${userName}`);
-        const audio = document.getElementById(`audio-${userId}`);
-        if (audio) {
-          audio.srcObject = event.streams[0];
-        }
-      };
-
-      // Offer if initiator
-      if (initiator) {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        socket.emit('offer', { to: userId, offer });
-        debugLog(`Sent offer to ${userId}`);
-      }
-
-      return pc;
-    }
-
-    joinBtn.onclick = async () => {
-      const room = roomNameInput.value.trim();
-      const name = userNameInput.value.trim();
-      if (!room || !name) {
-        alert('Enter room and name');
+      if (!roomName || !userName) {
+        alert("Please enter both room name and user name");
         return;
       }
 
-      await initLocalStream();
+      socket.emit('join-room', { roomName, userName });
+    });
 
-      // Connect to server
-      socket = io('http://localhost:3000'); // 👉 change to your server URL
-      socket.on('connect', () => {
-        debugLog('Socket connected: ' + socket.id);
-        updateConnectionStatus('Connected to signaling server', 'connected');
-        socket.emit('join-room', { roomName: room, userName: name });
-      });
-      socket.on('connect_error', (err) => {
-        debugLog('Socket connect_error: ' + err.message);
-        updateConnectionStatus('Signaling error', 'disconnected');
-      });
+    // Someone joined
+    socket.on('user-joined', (data) => {
+      const userEl = document.createElement('div');
+      userEl.id = data.userId;
+      userEl.innerText = `${data.userName} joined`;
+      usersDiv.appendChild(userEl);
+    });
 
-      // Existing users
-      socket.on('all-users', async (users) => {
-        debugLog('Existing users: ' + JSON.stringify(users));
-        users.forEach(async (id) => {
-          addParticipantToList(id, 'Remote', false);
-          await createPeerConnection(id, 'Remote', true);
-        });
-      });
-
-      // New join
-      socket.on('user-joined', async ({ userId, userName }) => {
-        debugLog(`${userName} joined (${userId})`);
-        addParticipantToList(userId, userName, false);
-        await createPeerConnection(userId, userName, true);
-      });
-
-      // Offer
-      socket.on('offer', async ({ from, offer }) => {
-        debugLog('Got offer from ' + from);
-        const pc = await createPeerConnection(from, 'Remote', false);
-        await pc.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        socket.emit('answer', { to: from, answer });
-        debugLog('Sent answer to ' + from);
-      });
-
-      // Answer
-      socket.on('answer', async ({ from, answer }) => {
-        debugLog('Got answer from ' + from);
-        const pc = peers[from];
-        if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
-      });
-
-      // ICE
-      socket.on('ice-candidate', async ({ from, candidate }) => {
-        debugLog('Got ICE from ' + from);
-        const pc = peers[from];
-        if (pc) {
-          try {
-            await pc.addIceCandidate(new RTCIceCandidate(candidate));
-          } catch (e) {
-            debugLog('ICE error: ' + e.message);
-          }
-        }
-      });
-
-      // Leave
-      socket.on('user-left', ({ userId }) => {
-        debugLog('User left: ' + userId);
-        if (peers[userId]) peers[userId].close();
-        delete peers[userId];
-        removeParticipantFromList(userId);
-      });
-
-      addParticipantToList(socket.id, name, true);
-      currentRoom = room;
-      currentUserName = name;
-      joinBtn.disabled = true;
-      leaveBtn.disabled = false;
-      muteBtn.disabled = false;
-      updateConnectionStatus('Joined room ' + room, 'connected');
-    };
-
-    leaveBtn.onclick = () => {
-      if (socket && currentRoom) {
-        socket.emit('leave-room', { roomName: currentRoom });
-        socket.disconnect();
+    // Someone left
+    socket.on('user-left', (data) => {
+      const userEl = document.getElementById(data.userId);
+      if (userEl) {
+        userEl.innerText = `${data.userName} left`;
       }
-      Object.values(peers).forEach(pc => pc.close());
-      peers = {};
-      participantsEl.innerHTML = '';
-      joinBtn.disabled = false;
-      leaveBtn.disabled = true;
-      muteBtn.disabled = true;
-      updateConnectionStatus('Disconnected', 'disconnected');
-    };
+    });
 
-    muteBtn.onclick = () => {
-      if (localStream) {
-        localStream.getAudioTracks().forEach(track => {
-          track.enabled = isMuted;
-        });
-        isMuted = !isMuted;
-        const statusText = isMuted ? 'Audio: Muted' : 'Audio: Active';
-        document.getElementById('status-' + socket.id).textContent = statusText;
-      }
-    };
+    // If room is full
+    socket.on('room-full', () => {
+      alert("Room is full (max 10 users)");
+    });
   </script>
 </body>
 </html>
