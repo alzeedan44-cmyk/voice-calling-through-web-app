@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Group Call - Fixed</title>
+    <title>WhatsApp Group Call - Fixed Connection</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -263,6 +263,41 @@
         .debug-log {
             color: #ccc;
             margin: 2px 0;
+            font-family: monospace;
+            font-size: 11px;
+        }
+        
+        .connection-status {
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .status-connected {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+        }
+        
+        .status-disconnected {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+        
+        .status-connecting {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f1c40f;
+        }
+        
+        .troubleshoot-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-top: 15px;
+            cursor: pointer;
         }
         
         .hidden {
@@ -313,6 +348,12 @@
                 <div class="debug-title">Debug Info:</div>
                 <div id="debug-logs"></div>
             </div>
+            
+            <div id="connection-status" class="connection-status status-disconnected">Disconnected</div>
+            
+            <button class="troubleshoot-btn" onclick="runConnectionTests()">
+                <i class="fas fa-bug"></i> Run Connection Tests
+            </button>
         </div>
 
         <!-- Active Call View -->
@@ -351,8 +392,8 @@
             </div>
             
             <div class="debug-panel">
-                <div class="debug-title">Connection Status:</div>
-                <div id="connection-status">Not connected</div>
+                <div class="debug-title">WebRTC Status:</div>
+                <div id="webrtc-status">Initializing...</div>
             </div>
             
             <div class="add-participant-btn" onclick="addParticipant()">
@@ -373,6 +414,7 @@
         const groupNameElement = document.getElementById('display-group-name');
         const debugLogsElement = document.getElementById('debug-logs');
         const connectionStatusElement = document.getElementById('connection-status');
+        const webrtcStatusElement = document.getElementById('webrtc-status');
         
         // Socket connection
         const socket = io();
@@ -391,11 +433,18 @@
         // WebRTC configuration with multiple STUN/TURN servers
         const configuration = {
             iceServers: [
+                // Google's STUN servers
                 { urls: 'stun:stun.l.google.com:19302' },
                 { urls: 'stun:stun1.l.google.com:19302' },
                 { urls: 'stun:stun2.l.google.com:19302' },
                 { urls: 'stun:stun3.l.google.com:19302' },
                 { urls: 'stun:stun4.l.google.com:19302' },
+                
+                // Fallback STUN servers
+                { urls: 'stun:stun.services.mozilla.com:3478' },
+                { urls: 'stun:stun.stunprotocol.org:3478' },
+                
+                // TURN servers (essential for NAT traversal)
                 {
                     urls: 'turn:openrelay.metered.ca:80',
                     username: 'openrelayproject',
@@ -410,9 +459,23 @@
                     urls: 'turn:openrelay.metered.ca:443?transport=tcp',
                     username: 'openrelayproject',
                     credential: 'openrelayproject'
+                },
+                // Additional free TURN servers
+                {
+                    urls: 'turn:numb.viagenie.ca:3478',
+                    credential: 'muazkh',
+                    username: 'webrtc@live.com'
+                },
+                {
+                    urls: 'turn:turn.bistri.com:80',
+                    credential: 'homeo',
+                    username: 'homeo'
                 }
             ],
-            iceCandidatePoolSize: 10
+            iceCandidatePoolSize: 10,
+            iceTransportPolicy: 'all', // Use both relay and non-relay candidates
+            bundlePolicy: 'max-bundle',
+            rtcpMuxPolicy: 'require'
         };
         
         // Initialize with sample data
@@ -430,19 +493,75 @@
         }
         
         // Update connection status
-        function updateConnectionStatus(status) {
+        function updateConnectionStatus(status, type) {
             connectionStatusElement.textContent = status;
+            connectionStatusElement.className = 'connection-status status-' + type;
+        }
+        
+        // Update WebRTC status
+        function updateWebRTCStatus(status) {
+            webrtcStatusElement.textContent = status;
+        }
+        
+        // Run connection tests
+        function runConnectionTests() {
+            debugLog('Running connection tests...');
+            
+            // Test WebRTC support
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                debugLog('ERROR: WebRTC not supported in this browser');
+                return;
+            }
+            
+            // Test microphone access
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    debugLog('Microphone access: OK');
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    // Test WebRTC peer connection
+                    const testPeer = new RTCPeerConnection(configuration);
+                    
+                    testPeer.createDataChannel('test');
+                    
+                    testPeer.createOffer()
+                        .then(offer => {
+                            debugLog('WebRTC offer creation: OK');
+                            return testPeer.setLocalDescription(offer);
+                        })
+                        .then(() => {
+                            debugLog('WebRTC local description: OK');
+                            
+                            // Check ICE gathering state
+                            setTimeout(() => {
+                                if (testPeer.iceGatheringState === 'complete') {
+                                    debugLog('ICE gathering: OK');
+                                } else {
+                                    debugLog('WARNING: ICE gathering may be incomplete');
+                                }
+                                
+                                testPeer.close();
+                            }, 1000);
+                        })
+                        .catch(error => {
+                            debugLog('WebRTC test failed: ' + error.message);
+                            testPeer.close();
+                        });
+                })
+                .catch(error => {
+                    debugLog('Microphone access denied: ' + error.message);
+                });
         }
         
         // Socket event listeners
         socket.on('connect', () => {
             debugLog('Connected to server with ID: ' + socket.id);
-            updateConnectionStatus('Connected to signaling server');
+            updateConnectionStatus('Connected to signaling server', 'connected');
         });
         
         socket.on('disconnect', () => {
             debugLog('Disconnected from server');
-            updateConnectionStatus('Disconnected from signaling server');
+            updateConnectionStatus('Disconnected from signaling server', 'disconnected');
         });
         
         socket.on('user-joined', (data) => {
@@ -466,7 +585,7 @@
         socket.on('offer', async (data) => {
             debugLog(`Received offer from ${data.from}`);
             if (!peers[data.from]) {
-                await createPeerConnection(data.from, data.userName, false);
+                await createPeerConnection(data.from, 'Remote User', false);
             }
             try {
                 await peers[data.from].setRemoteDescription(data.offer);
@@ -639,12 +758,24 @@
             // Add event listeners for debugging
             peer.addEventListener('iceconnectionstatechange', () => {
                 debugLog(`ICE connection state for ${userName}: ${peer.iceConnectionState}`);
-                updateConnectionStatus(`ICE: ${peer.iceConnectionState}`);
+                updateWebRTCStatus(`ICE: ${peer.iceConnectionState}`);
+                
+                if (peer.iceConnectionState === 'connected') {
+                    debugLog('Successfully connected to peer!');
+                } else if (peer.iceConnectionState === 'failed') {
+                    debugLog('ICE connection failed. Trying to restart...');
+                    // Try to restart ICE
+                    setTimeout(() => {
+                        if (peer.iceConnectionState === 'failed') {
+                            peer.restartIce();
+                        }
+                    }, 1000);
+                }
             });
             
             peer.addEventListener('connectionstatechange', () => {
                 debugLog(`Connection state for ${userName}: ${peer.connectionState}`);
-                updateConnectionStatus(`Connection: ${peer.connectionState}`);
+                updateWebRTCStatus(`Connection: ${peer.connectionState}`);
             });
             
             peer.addEventListener('signalingstatechange', () => {
@@ -653,12 +784,18 @@
             
             peer.addEventListener('icecandidate', (event) => {
                 if (event.candidate) {
-                    debugLog(`Sending ICE candidate to ${userId}`);
+                    debugLog(`Sending ICE candidate to ${userId}, type: ${event.candidate.type}`);
                     socket.emit('ice-candidate', {
                         to: userId,
                         candidate: event.candidate
                     });
+                } else {
+                    debugLog('ICE gathering complete');
                 }
+            });
+            
+            peer.addEventListener('icegatheringstatechange', () => {
+                debugLog(`ICE gathering state: ${peer.iceGatheringState}`);
             });
             
             // Add local stream to peer connection
@@ -682,6 +819,13 @@
                 // Try to play the audio in case autoplay is blocked
                 audio.play().catch(error => {
                     debugLog('Error playing audio: ' + error.message);
+                    // Try again with user gesture
+                    audio.setAttribute('muted', '');
+                    audio.play().then(() => {
+                        audio.removeAttribute('muted');
+                    }).catch(err => {
+                        debugLog('Still cannot play audio: ' + err.message);
+                    });
                 });
             };
             
@@ -690,7 +834,12 @@
             // Create offer if initiator
             if (isInitiator) {
                 try {
-                    const offer = await peer.createOffer();
+                    const offerOptions = {
+                        offerToReceiveAudio: true,
+                        offerToReceiveVideo: false
+                    };
+                    
+                    const offer = await peer.createOffer(offerOptions);
                     await peer.setLocalDescription(offer);
                     socket.emit('offer', { to: userId, offer });
                     debugLog(`Sent offer to ${userId}`);
