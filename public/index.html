@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Group Call</title>
+    <title>WhatsApp Group Call - Fixed</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -244,6 +244,27 @@
             background: #0c6b5e;
         }
         
+        .debug-panel {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .debug-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #4ecdc4;
+        }
+        
+        .debug-log {
+            color: #ccc;
+            margin: 2px 0;
+        }
+        
         .hidden {
             display: none;
         }
@@ -287,6 +308,11 @@
                 <input type="text" id="user-name" placeholder="Enter your name" value="You">
             </div>
             <button class="join-btn" onclick="joinCall()">Join Call</button>
+            
+            <div class="debug-panel">
+                <div class="debug-title">Debug Info:</div>
+                <div id="debug-logs"></div>
+            </div>
         </div>
 
         <!-- Active Call View -->
@@ -324,6 +350,11 @@
                 </div>
             </div>
             
+            <div class="debug-panel">
+                <div class="debug-title">Connection Status:</div>
+                <div id="connection-status">Not connected</div>
+            </div>
+            
             <div class="add-participant-btn" onclick="addParticipant()">
                 <i class="fas fa-user-plus"></i>
             </div>
@@ -340,6 +371,8 @@
         const muteBtn = document.getElementById('mute-btn');
         const speakerBtn = document.getElementById('speaker-btn');
         const groupNameElement = document.getElementById('display-group-name');
+        const debugLogsElement = document.getElementById('debug-logs');
+        const connectionStatusElement = document.getElementById('connection-status');
         
         // Socket connection
         const socket = io();
@@ -355,44 +388,72 @@
         let roomName = '';
         let userName = '';
         
-        // WebRTC configuration with TURN server
+        // WebRTC configuration with multiple STUN/TURN servers
         const configuration = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { 
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' },
+                {
                     urls: 'turn:openrelay.metered.ca:80',
                     username: 'openrelayproject',
                     credential: 'openrelayproject'
                 },
-                { 
+                {
                     urls: 'turn:openrelay.metered.ca:443',
                     username: 'openrelayproject',
                     credential: 'openrelayproject'
                 },
-                { 
+                {
                     urls: 'turn:openrelay.metered.ca:443?transport=tcp',
                     username: 'openrelayproject',
                     credential: 'openrelayproject'
                 }
-            ]
+            ],
+            iceCandidatePoolSize: 10
         };
         
         // Initialize with sample data
         document.getElementById('group-name').value = 'Family Group';
         document.getElementById('user-name').value = 'You';
         
+        // Debug logging
+        function debugLog(message) {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'debug-log';
+            logEntry.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            debugLogsElement.appendChild(logEntry);
+            debugLogsElement.scrollTop = debugLogsElement.scrollHeight;
+            console.log(message);
+        }
+        
+        // Update connection status
+        function updateConnectionStatus(status) {
+            connectionStatusElement.textContent = status;
+        }
+        
         // Socket event listeners
         socket.on('connect', () => {
-            console.log('Connected to server with ID:', socket.id);
+            debugLog('Connected to server with ID: ' + socket.id);
+            updateConnectionStatus('Connected to signaling server');
+        });
+        
+        socket.on('disconnect', () => {
+            debugLog('Disconnected from server');
+            updateConnectionStatus('Disconnected from signaling server');
         });
         
         socket.on('user-joined', (data) => {
+            debugLog(`${data.userName} joined the call`);
             addSystemMessage(`${data.userName} joined the call`);
             addParticipantToList(data.userId, data.userName);
             createPeerConnection(data.userId, data.userName, true);
         });
         
         socket.on('user-left', (data) => {
+            debugLog(`${data.userName} left the call`);
             addSystemMessage(`${data.userName} left the call`);
             removeParticipantFromList(data.userId);
             
@@ -403,24 +464,40 @@
         });
         
         socket.on('offer', async (data) => {
+            debugLog(`Received offer from ${data.from}`);
             if (!peers[data.from]) {
                 await createPeerConnection(data.from, data.userName, false);
             }
-            await peers[data.from].setRemoteDescription(data.offer);
-            const answer = await peers[data.from].createAnswer();
-            await peers[data.from].setLocalDescription(answer);
-            socket.emit('answer', { to: data.from, answer });
+            try {
+                await peers[data.from].setRemoteDescription(data.offer);
+                const answer = await peers[data.from].createAnswer();
+                await peers[data.from].setLocalDescription(answer);
+                socket.emit('answer', { to: data.from, answer });
+                debugLog(`Sent answer to ${data.from}`);
+            } catch (error) {
+                debugLog('Error handling offer: ' + error.message);
+            }
         });
         
         socket.on('answer', async (data) => {
+            debugLog(`Received answer from ${data.from}`);
             if (peers[data.from]) {
-                await peers[data.from].setRemoteDescription(data.answer);
+                try {
+                    await peers[data.from].setRemoteDescription(data.answer);
+                } catch (error) {
+                    debugLog('Error setting remote description: ' + error.message);
+                }
             }
         });
         
         socket.on('ice-candidate', async (data) => {
+            debugLog(`Received ICE candidate from ${data.from}`);
             if (peers[data.from]) {
-                await peers[data.from].addIceCandidate(data.candidate);
+                try {
+                    await peers[data.from].addIceCandidate(data.candidate);
+                } catch (error) {
+                    debugLog('Error adding ICE candidate: ' + error.message);
+                }
             }
         });
         
@@ -439,6 +516,7 @@
             }
             
             try {
+                debugLog('Requesting microphone access...');
                 // Get microphone access
                 localStream = await navigator.mediaDevices.getUserMedia({ 
                     audio: {
@@ -448,6 +526,8 @@
                     },
                     video: false
                 });
+                
+                debugLog('Microphone access granted');
                 
                 // Update group name display
                 groupNameElement.textContent = roomName;
@@ -464,9 +544,10 @@
                 
                 // Join the room
                 socket.emit('join-room', { roomName, userName });
+                debugLog(`Joined room: ${roomName} as ${userName}`);
                 
             } catch (error) {
-                console.error('Error accessing microphone:', error);
+                debugLog('Error accessing microphone: ' + error.message);
                 alert('Could not access your microphone. Please check permissions.');
             }
         }
@@ -497,6 +578,8 @@
             // Clear participants
             participantsContainer.innerHTML = '';
             participants = [];
+            
+            debugLog('Left the call');
         }
         
         // Toggle mute
@@ -521,6 +604,8 @@
             
             // Update UI
             updateParticipantAudioStatus(socket.id, isMuted ? 'muted' : 'unmuted');
+            
+            debugLog(isMuted ? 'Microphone muted' : 'Microphone unmuted');
         }
         
         // Toggle speaker
@@ -530,6 +615,7 @@
             
             // Note: Speaker control requires specific implementation for audio routing
             // This would be implemented in a complete application
+            debugLog(isSpeakerOn ? 'Speaker enabled' : 'Speaker disabled');
         }
         
         // Toggle video (simulated)
@@ -546,7 +632,34 @@
         
         // Create a peer connection
         async function createPeerConnection(userId, userName, isInitiator) {
+            debugLog(`Creating peer connection with ${userName} (${userId}), initiator: ${isInitiator}`);
+            
             const peer = new RTCPeerConnection(configuration);
+            
+            // Add event listeners for debugging
+            peer.addEventListener('iceconnectionstatechange', () => {
+                debugLog(`ICE connection state for ${userName}: ${peer.iceConnectionState}`);
+                updateConnectionStatus(`ICE: ${peer.iceConnectionState}`);
+            });
+            
+            peer.addEventListener('connectionstatechange', () => {
+                debugLog(`Connection state for ${userName}: ${peer.connectionState}`);
+                updateConnectionStatus(`Connection: ${peer.connectionState}`);
+            });
+            
+            peer.addEventListener('signalingstatechange', () => {
+                debugLog(`Signaling state for ${userName}: ${peer.signalingState}`);
+            });
+            
+            peer.addEventListener('icecandidate', (event) => {
+                if (event.candidate) {
+                    debugLog(`Sending ICE candidate to ${userId}`);
+                    socket.emit('ice-candidate', {
+                        to: userId,
+                        candidate: event.candidate
+                    });
+                }
+            });
             
             // Add local stream to peer connection
             if (localStream) {
@@ -557,6 +670,7 @@
             
             // Handle remote stream
             peer.ontrack = (event) => {
+                debugLog(`Received remote stream from ${userName}`);
                 const audio = document.createElement('audio');
                 audio.srcObject = event.streams[0];
                 audio.autoplay = true;
@@ -564,16 +678,11 @@
                 // Add a unique ID so we can remove it later if needed
                 audio.id = `audio-${userId}`;
                 document.body.appendChild(audio);
-            };
-            
-            // Handle ICE candidates
-            peer.onicecandidate = (event) => {
-                if (event.candidate) {
-                    socket.emit('ice-candidate', {
-                        to: userId,
-                        candidate: event.candidate
-                    });
-                }
+                
+                // Try to play the audio in case autoplay is blocked
+                audio.play().catch(error => {
+                    debugLog('Error playing audio: ' + error.message);
+                });
             };
             
             peers[userId] = peer;
@@ -584,8 +693,9 @@
                     const offer = await peer.createOffer();
                     await peer.setLocalDescription(offer);
                     socket.emit('offer', { to: userId, offer });
+                    debugLog(`Sent offer to ${userId}`);
                 } catch (error) {
-                    console.error('Error creating offer:', error);
+                    debugLog('Error creating offer: ' + error.message);
                 }
             }
             
@@ -647,7 +757,7 @@
         // Add system message
         function addSystemMessage(message) {
             // This would display system messages in a chat interface
-            console.log('System message:', message);
+            debugLog('System: ' + message);
         }
         
         // Start call timer

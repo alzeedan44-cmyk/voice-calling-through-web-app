@@ -22,6 +22,12 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
+
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
@@ -34,6 +40,7 @@ io.on('connection', (socket) => {
       rooms.set(roomName, {
         users: new Map(),
       });
+      console.log(`Created new room: ${roomName}`);
     }
     
     const room = rooms.get(roomName);
@@ -41,6 +48,7 @@ io.on('connection', (socket) => {
     // Check if room is full (max 10 users)
     if (room.users.size >= 10) {
       socket.emit('room-full');
+      console.log(`Room ${roomName} is full, rejecting ${userName}`);
       return;
     }
     
@@ -74,6 +82,7 @@ io.on('connection', (socket) => {
 
   // Handle WebRTC signaling
   socket.on('offer', (data) => {
+    console.log(`Forwarding offer from ${socket.id} to ${data.to}`);
     socket.to(data.to).emit('offer', {
       offer: data.offer,
       from: socket.id
@@ -81,6 +90,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('answer', (data) => {
+    console.log(`Forwarding answer from ${socket.id} to ${data.to}`);
     socket.to(data.to).emit('answer', {
       answer: data.answer,
       from: socket.id
@@ -88,6 +98,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('ice-candidate', (data) => {
+    console.log(`Forwarding ICE candidate from ${socket.id} to ${data.to}`);
     socket.to(data.to).emit('ice-candidate', {
       candidate: data.candidate,
       from: socket.id
@@ -103,6 +114,7 @@ io.on('connection', (socket) => {
         userId: socket.id,
         audioStatus: data.audioStatus
       });
+      console.log(`${data.userName} ${data.audioStatus} audio in room ${data.roomName}`);
     }
   });
 
@@ -125,8 +137,10 @@ io.on('connection', (socket) => {
         // Remove room if empty
         if (room.users.size === 0) {
           rooms.delete(roomName);
+          console.log(`Deleted empty room: ${roomName}`);
         }
         
+        console.log(`${userName} left room ${roomName}`);
         break;
       }
     }
@@ -150,7 +164,10 @@ io.on('connection', (socket) => {
       // Remove room if empty
       if (room.users.size === 0) {
         rooms.delete(roomName);
+        console.log(`Deleted empty room: ${roomName}`);
       }
+      
+      console.log(`${userName} left room ${roomName}`);
     }
   });
 });
