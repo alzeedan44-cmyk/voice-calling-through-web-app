@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Group Call - Stable Connection</title>
+    <title>WhatsApp Group Call - Connection Fixed</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -477,6 +477,7 @@
         let maxConnectionAttempts = 3;
         let connectionMonitor = null;
         let statsInterval = null;
+        let isInitiator = false;
         
         // WebRTC configuration with multiple STUN/TURN servers
         const configuration = {
@@ -749,7 +750,11 @@
             debugLog(`${data.userName} joined the call`);
             addSystemMessage(`${data.userName} joined the call`);
             addParticipantToList(data.userId, data.userName);
-            createPeerConnection(data.userId, data.userName, true);
+            
+            // Determine who should be the initiator based on user ID comparison
+            // This prevents the race condition where both peers try to initiate
+            isInitiator = socket.id > data.userId;
+            createPeerConnection(data.userId, data.userName, isInitiator);
         });
         
         socket.on('user-left', (data) => {
@@ -765,28 +770,47 @@
         
         socket.on('offer', async (data) => {
             debugLog(`Received offer from ${data.from}`);
-            if (!peers[data.from]) {
-                await createPeerConnection(data.from, 'Remote User', false);
-            }
-            try {
-                await peers[data.from].setRemoteDescription(data.offer);
-                const answer = await peers[data.from].createAnswer();
-                await peers[data.from].setLocalDescription(answer);
-                socket.emit('answer', { to: data.from, answer });
-                debugLog(`Sent answer to ${data.from}`);
-            } catch (error) {
-                debugLog('Error handling offer: ' + error.message);
+            
+            // Only process offers if we're not the initiator
+            if (!isInitiator) {
+                if (!peers[data.from]) {
+                    await createPeerConnection(data.from, 'Remote User', false);
+                }
+                
+                try {
+                    await peers[data.from].setRemoteDescription(data.offer);
+                    const answer = await peers[data.from].createAnswer();
+                    await peers[data.from].setLocalDescription(answer);
+                    socket.emit('answer', { to: data.from, answer });
+                    debugLog(`Sent answer to ${data.from}`);
+                } catch (error) {
+                    debugLog('Error handling offer: ' + error.message);
+                }
+            } else {
+                debugLog('Ignoring offer as we are the initiator');
             }
         });
         
         socket.on('answer', async (data) => {
             debugLog(`Received answer from ${data.from}`);
-            if (peers[data.from]) {
+            
+            // Only process answers if we are the initiator
+            if (isInitiator && peers[data.from]) {
                 try {
                     await peers[data.from].setRemoteDescription(data.answer);
                 } catch (error) {
                     debugLog('Error setting remote description: ' + error.message);
+                    
+                    // If we're in the wrong state, try to recover by restarting ICE
+                    if (error.toString().includes('wrong state')) {
+                        debugLog('Attempting to recover from wrong state error');
+                        if (typeof peers[data.from].restartIce === 'function') {
+                            peers[data.from].restartIce();
+                        }
+                    }
                 }
+            } else {
+                debugLog('Ignoring answer as we are not the initiator');
             }
         });
         
@@ -951,8 +975,8 @@
         }
         
         // Create a peer connection
-        async function createPeerConnection(userId, userName, isInitiator) {
-            debugLog(`Creating peer connection with ${userName} (${userId}), initiator: ${isInitiator}`);
+        async function createPeerConnection(userId, userName, shouldBeInitiator) {
+            debugLog(`Creating peer connection with ${userName} (${userId}), initiator: ${shouldBeInitiator}`);
             
             const peer = new RTCPeerConnection(configuration);
             
@@ -1046,7 +1070,7 @@
             peers[userId] = peer;
             
             // Create offer if initiator
-            if (isInitiator) {
+            if (shouldBeInitiator) {
                 try {
                     const offerOptions = {
                         offerToReceiveAudio: true,
