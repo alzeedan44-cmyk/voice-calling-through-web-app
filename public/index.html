@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Group Call - Stable Connection</title>
+    <title>WhatsApp Group Call - Connection Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -315,21 +315,6 @@
             cursor: pointer;
         }
         
-        .connection-quality {
-            height: 5px;
-            background: #2a3942;
-            border-radius: 3px;
-            margin-top: 10px;
-            overflow: hidden;
-        }
-        
-        .quality-bar {
-            height: 100%;
-            width: 0%;
-            background: #2ecc71;
-            transition: width 0.5s ease;
-        }
-        
         @media (max-width: 500px) {
             .container {
                 height: 100vh;
@@ -376,10 +361,6 @@
             </div>
             
             <div id="connection-status" class="connection-status status-disconnected">Disconnected</div>
-            
-            <div class="connection-quality">
-                <div id="quality-bar" class="quality-bar"></div>
-            </div>
             
             <button class="troubleshoot-btn" onclick="runConnectionTests()">
                 <i class="fas fa-bug"></i> Run Connection Tests
@@ -430,10 +411,6 @@
                 <div id="webrtc-status">Initializing...</div>
             </div>
             
-            <div class="connection-quality">
-                <div id="active-quality-bar" class="quality-bar"></div>
-            </div>
-            
             <button class="fix-connection-btn" onclick="restartIce()" style="margin: 10px auto; display: block;">
                 <i class="fas fa-sync-alt"></i> Restart ICE Connection
             </button>
@@ -457,8 +434,6 @@
         const debugLogsElement = document.getElementById('debug-logs');
         const connectionStatusElement = document.getElementById('connection-status');
         const webrtcStatusElement = document.getElementById('webrtc-status');
-        const qualityBar = document.getElementById('quality-bar');
-        const activeQualityBar = document.getElementById('active-quality-bar');
         
         // Socket connection
         const socket = io();
@@ -475,8 +450,6 @@
         let userName = '';
         let connectionAttempts = 0;
         let maxConnectionAttempts = 3;
-        let connectionMonitor = null;
-        let statsInterval = null;
         
         // WebRTC configuration with multiple STUN/TURN servers
         const configuration = {
@@ -518,29 +491,12 @@
                     urls: 'turn:turn.bistri.com:80',
                     credential: 'homeo',
                     username: 'homeo'
-                },
-                // More reliable TURN servers
-                {
-                    urls: 'turn:relay.metered.ca:80',
-                    username: '0c16b72f4f90c703a6f7a9d8',
-                    credential: '3T2pN3q2r3HpV7yV'
-                },
-                {
-                    urls: 'turn:relay.metered.ca:443',
-                    username: '0c16b72f4f90c703a6f7a9d8',
-                    credential: '3T2pN3q2r3HpV7yV'
-                },
-                {
-                    urls: 'turn:relay.metered.ca:443?transport=tcp',
-                    username: '0c16b72f4f90c703a6f7a9d8',
-                    credential: '3T2pN3q2r3HpV7yV'
                 }
             ],
-            iceCandidatePoolSize: 15,
-            iceTransportPolicy: 'all',
+            iceCandidatePoolSize: 10,
+            iceTransportPolicy: 'all', // Use both relay and non-relay candidates
             bundlePolicy: 'max-bundle',
-            rtcpMuxPolicy: 'require',
-            sdpSemantics: 'unified-plan'
+            rtcpMuxPolicy: 'require'
         };
         
         // Initialize with sample data
@@ -566,20 +522,6 @@
         // Update WebRTC status
         function updateWebRTCStatus(status) {
             webrtcStatusElement.textContent = status;
-        }
-        
-        // Update connection quality indicator
-        function updateQualityIndicator(quality, isActiveCall = false) {
-            const bar = isActiveCall ? activeQualityBar : qualityBar;
-            bar.style.width = quality + '%';
-            
-            if (quality > 70) {
-                bar.style.background = '#2ecc71';
-            } else if (quality > 30) {
-                bar.style.background = '#f39c12';
-            } else {
-                bar.style.background = '#e74c3c';
-            }
         }
         
         // Apply connection fix
@@ -612,62 +554,8 @@
                     } catch (error) {
                         debugLog(`Error restarting ICE for ${userId}: ${error.message}`);
                     }
-                } else {
-                    debugLog(`Cannot restart ICE for ${userId} - method not available`);
                 }
             }
-        }
-        
-        // Monitor connection quality
-        function startConnectionMonitoring() {
-            if (connectionMonitor) clearInterval(connectionMonitor);
-            
-            connectionMonitor = setInterval(() => {
-                let connectedPeers = 0;
-                let totalPeers = 0;
-                
-                for (const userId in peers) {
-                    totalPeers++;
-                    if (peers[userId].iceConnectionState === 'connected') {
-                        connectedPeers++;
-                    }
-                }
-                
-                const connectionQuality = totalPeers > 0 ? Math.round((connectedPeers / totalPeers) * 100) : 0;
-                updateQualityIndicator(connectionQuality, true);
-                
-                if (connectionQuality < 50 && connectedPeers > 0) {
-                    debugLog(`Low connection quality: ${connectionQuality}% (${connectedPeers}/${totalPeers} peers connected)`);
-                }
-            }, 3000);
-        }
-        
-        // Get WebRTC stats
-        function startStatsCollection() {
-            if (statsInterval) clearInterval(statsInterval);
-            
-            statsInterval = setInterval(async () => {
-                for (const userId in peers) {
-                    if (peers[userId].iceConnectionState === 'connected') {
-                        try {
-                            const stats = await peers[userId].getStats();
-                            let audioTrackStats = null;
-                            
-                            stats.forEach(report => {
-                                if (report.type === 'inbound-rtp' && report.mediaType === 'audio') {
-                                    audioTrackStats = report;
-                                }
-                            });
-                            
-                            if (audioTrackStats) {
-                                debugLog(`Audio stats - Packets lost: ${audioTrackStats.packetsLost}, Jitter: ${audioTrackStats.jitter}`);
-                            }
-                        } catch (error) {
-                            debugLog('Error getting stats: ' + error.message);
-                        }
-                    }
-                }
-            }, 10000);
         }
         
         // Run connection tests
@@ -695,7 +583,7 @@
                     const iceGatheringTimeout = setTimeout(() => {
                         debugLog('ICE gathering timeout - may indicate firewall issues');
                         testPeer.close();
-                    }, 8000);
+                    }, 5000);
                     
                     testPeer.createOffer()
                         .then(offer => {
@@ -710,7 +598,6 @@
                                 if (testPeer.iceGatheringState === 'complete') {
                                     clearTimeout(iceGatheringTimeout);
                                     debugLog('ICE gathering: COMPLETE');
-                                    updateQualityIndicator(100);
                                     testPeer.close();
                                 } else if (testPeer.iceGatheringState === 'gathering') {
                                     debugLog('ICE gathering: IN PROGRESS');
@@ -851,10 +738,6 @@
                 // Start call timer
                 startCallTimer();
                 
-                // Start connection monitoring
-                startConnectionMonitoring();
-                startStatsCollection();
-                
                 // Join the room
                 socket.emit('join-room', { roomName, userName });
                 debugLog(`Joined room: ${roomName} as ${userName}`);
@@ -869,10 +752,6 @@
         function leaveCall() {
             // Stop call timer
             stopCallTimer();
-            
-            // Stop monitoring
-            if (connectionMonitor) clearInterval(connectionMonitor);
-            if (statsInterval) clearInterval(statsInterval);
             
             // Close all peer connections
             for (const userId in peers) {
@@ -963,10 +842,8 @@
                 
                 if (peer.iceConnectionState === 'connected') {
                     debugLog('Successfully connected to peer!');
-                    updateQualityIndicator(100, true);
                 } else if (peer.iceConnectionState === 'failed') {
                     debugLog('ICE connection failed. Trying to restart...');
-                    updateQualityIndicator(20, true);
                     // Try to restart ICE
                     setTimeout(() => {
                         if (peer.iceConnectionState === 'failed') {
