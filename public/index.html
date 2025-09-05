@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Group Call - Fixed Connection</title>
+    <title>WhatsApp Group Call - Connection Fix</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -304,6 +304,17 @@
             display: none;
         }
         
+        .fix-connection-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        
         @media (max-width: 500px) {
             .container {
                 height: 100vh;
@@ -354,6 +365,10 @@
             <button class="troubleshoot-btn" onclick="runConnectionTests()">
                 <i class="fas fa-bug"></i> Run Connection Tests
             </button>
+            
+            <button class="fix-connection-btn" onclick="applyConnectionFix()">
+                <i class="fas fa-tools"></i> Apply Connection Fix
+            </button>
         </div>
 
         <!-- Active Call View -->
@@ -396,6 +411,10 @@
                 <div id="webrtc-status">Initializing...</div>
             </div>
             
+            <button class="fix-connection-btn" onclick="restartIce()" style="margin: 10px auto; display: block;">
+                <i class="fas fa-sync-alt"></i> Restart ICE Connection
+            </button>
+            
             <div class="add-participant-btn" onclick="addParticipant()">
                 <i class="fas fa-user-plus"></i>
             </div>
@@ -429,6 +448,8 @@
         let participants = [];
         let roomName = '';
         let userName = '';
+        let connectionAttempts = 0;
+        let maxConnectionAttempts = 3;
         
         // WebRTC configuration with multiple STUN/TURN servers
         const configuration = {
@@ -503,6 +524,40 @@
             webrtcStatusElement.textContent = status;
         }
         
+        // Apply connection fix
+        function applyConnectionFix() {
+            debugLog('Applying connection fix...');
+            
+            // Force TURN servers by changing iceTransportPolicy
+            configuration.iceTransportPolicy = 'relay';
+            debugLog('Set ICE transport policy to "relay" (TURN servers only)');
+            
+            // Increase ICE candidate pool size
+            configuration.iceCandidatePoolSize = 20;
+            debugLog('Increased ICE candidate pool size to 20');
+            
+            // Reset connection attempts
+            connectionAttempts = 0;
+            
+            debugLog('Connection fix applied. Please try joining the call again.');
+        }
+        
+        // Restart ICE connection
+        function restartIce() {
+            debugLog('Restarting ICE connections...');
+            
+            for (const userId in peers) {
+                if (peers[userId] && typeof peers[userId].restartIce === 'function') {
+                    try {
+                        peers[userId].restartIce();
+                        debugLog(`Restarted ICE for connection: ${userId}`);
+                    } catch (error) {
+                        debugLog(`Error restarting ICE for ${userId}: ${error.message}`);
+                    }
+                }
+            }
+        }
+        
         // Run connection tests
         function runConnectionTests() {
             debugLog('Running connection tests...');
@@ -524,6 +579,12 @@
                     
                     testPeer.createDataChannel('test');
                     
+                    // Set a longer timeout for ICE gathering
+                    const iceGatheringTimeout = setTimeout(() => {
+                        debugLog('ICE gathering timeout - may indicate firewall issues');
+                        testPeer.close();
+                    }, 5000);
+                    
                     testPeer.createOffer()
                         .then(offer => {
                             debugLog('WebRTC offer creation: OK');
@@ -532,18 +593,25 @@
                         .then(() => {
                             debugLog('WebRTC local description: OK');
                             
-                            // Check ICE gathering state
-                            setTimeout(() => {
+                            // Check ICE gathering state with more time
+                            const checkIceState = () => {
                                 if (testPeer.iceGatheringState === 'complete') {
-                                    debugLog('ICE gathering: OK');
+                                    clearTimeout(iceGatheringTimeout);
+                                    debugLog('ICE gathering: COMPLETE');
+                                    testPeer.close();
+                                } else if (testPeer.iceGatheringState === 'gathering') {
+                                    debugLog('ICE gathering: IN PROGRESS');
+                                    setTimeout(checkIceState, 1000);
                                 } else {
-                                    debugLog('WARNING: ICE gathering may be incomplete');
+                                    debugLog(`ICE gathering: ${testPeer.iceGatheringState}`);
+                                    setTimeout(checkIceState, 1000);
                                 }
-                                
-                                testPeer.close();
-                            }, 1000);
+                            };
+                            
+                            checkIceState();
                         })
                         .catch(error => {
+                            clearTimeout(iceGatheringTimeout);
                             debugLog('WebRTC test failed: ' + error.message);
                             testPeer.close();
                         });
@@ -634,6 +702,15 @@
                 return;
             }
             
+            // Check if we've exceeded connection attempts
+            if (connectionAttempts >= maxConnectionAttempts) {
+                debugLog('Maximum connection attempts reached. Please try applying the connection fix.');
+                return;
+            }
+            
+            connectionAttempts++;
+            debugLog(`Connection attempt ${connectionAttempts} of ${maxConnectionAttempts}`);
+            
             try {
                 debugLog('Requesting microphone access...');
                 // Get microphone access
@@ -697,6 +774,9 @@
             // Clear participants
             participantsContainer.innerHTML = '';
             participants = [];
+            
+            // Reset connection attempts
+            connectionAttempts = 0;
             
             debugLog('Left the call');
         }
@@ -767,7 +847,12 @@
                     // Try to restart ICE
                     setTimeout(() => {
                         if (peer.iceConnectionState === 'failed') {
-                            peer.restartIce();
+                            if (typeof peer.restartIce === 'function') {
+                                peer.restartIce();
+                                debugLog('ICE connection restarted');
+                            } else {
+                                debugLog('Cannot restart ICE - method not supported');
+                            }
                         }
                     }, 1000);
                 }
@@ -776,6 +861,12 @@
             peer.addEventListener('connectionstatechange', () => {
                 debugLog(`Connection state for ${userName}: ${peer.connectionState}`);
                 updateWebRTCStatus(`Connection: ${peer.connectionState}`);
+                
+                if (peer.connectionState === 'connected') {
+                    debugLog('WebRTC connection established successfully!');
+                } else if (peer.connectionState === 'failed') {
+                    debugLog('WebRTC connection failed');
+                }
             });
             
             peer.addEventListener('signalingstatechange', () => {
