@@ -2,7 +2,6 @@ const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const server = http.createServer(app);
@@ -28,102 +27,75 @@ io.on('connection', (socket) => {
 
   // Handle joining a room
   socket.on('join-room', (data) => {
-    const { roomId, userName } = data;
+    const { roomName, userName } = data;
     
     // Create room if it doesn't exist
-    if (!rooms.has(roomId)) {
-      rooms.set(roomId, {
+    if (!rooms.has(roomName)) {
+      rooms.set(roomName, {
         users: new Map(),
-        audioSessions: new Map()
       });
     }
     
-    const room = rooms.get(roomId);
+    const room = rooms.get(roomName);
     
     // Add user to room
     room.users.set(socket.id, {
       id: socket.id,
       name: userName,
-      roomId: roomId
+      roomName: roomName,
+      audioStatus: 'unmuted'
     });
     
-    socket.join(roomId);
+    socket.join(roomName);
     
     // Notify others in the room
-    socket.to(roomId).emit('user-joined', {
+    socket.to(roomName).emit('user-joined', {
       userId: socket.id,
-      userName: userName,
-      users: Array.from(room.users.values())
+      userName: userName
     });
     
     // Send current users to the new user
-    socket.emit('users-in-room', {
-      users: Array.from(room.users.values())
+    const usersInRoom = Array.from(room.users.values()).filter(user => user.id !== socket.id);
+    usersInRoom.forEach(user => {
+      socket.emit('user-joined', {
+        userId: user.id,
+        userName: user.name
+      });
     });
     
-    console.log(`${userName} joined room ${roomId}`);
+    console.log(`${userName} joined room ${roomName}`);
   });
 
   // Handle WebRTC signaling
-  socket.on('webrtc-offer', (data) => {
-    socket.to(data.target).emit('webrtc-offer', {
+  socket.on('offer', (data) => {
+    socket.to(data.to).emit('offer', {
       offer: data.offer,
-      sender: socket.id
+      from: socket.id
     });
   });
 
-  socket.on('webrtc-answer', (data) => {
-    socket.to(data.target).emit('webrtc-answer', {
+  socket.on('answer', (data) => {
+    socket.to(data.to).emit('answer', {
       answer: data.answer,
-      sender: socket.id
+      from: socket.id
     });
   });
 
-  socket.on('webrtc-ice-candidate', (data) => {
-    socket.to(data.target).emit('webrtc-ice-candidate', {
+  socket.on('ice-candidate', (data) => {
+    socket.to(data.to).emit('ice-candidate', {
       candidate: data.candidate,
-      sender: socket.id
+      from: socket.id
     });
   });
 
-  // Handle chat messages
-  socket.on('send-chat-message', (data) => {
-    const room = rooms.get(data.roomId);
+  // Handle audio status changes
+  socket.on('audio-change', (data) => {
+    const room = rooms.get(data.roomName);
     if (room && room.users.has(socket.id)) {
-      const user = room.users.get(socket.id);
-      io.to(data.roomId).emit('receive-chat-message', {
-        message: data.message,
-        userName: user.name,
+      room.users.get(socket.id).audioStatus = data.audioStatus;
+      socket.to(data.roomName).emit('user-audio-changed', {
         userId: socket.id,
-        timestamp: new Date().toLocaleTimeString()
-      });
-    }
-  });
-
-  // Handle audio session start
-  socket.on('audio-start', (data) => {
-    const room = rooms.get(data.roomId);
-    if (room) {
-      room.audioSessions.set(socket.id, {
-        userId: socket.id,
-        userName: room.users.get(socket.id).name,
-        startTime: new Date()
-      });
-      
-      socket.to(data.roomId).emit('user-audio-start', {
-        userId: socket.id,
-        userName: room.users.get(socket.id).name
-      });
-    }
-  });
-
-  // Handle audio session end
-  socket.on('audio-end', (data) => {
-    const room = rooms.get(data.roomId);
-    if (room && room.audioSessions.has(socket.id)) {
-      room.audioSessions.delete(socket.id);
-      socket.to(data.roomId).emit('user-audio-end', {
-        userId: socket.id
+        audioStatus: data.audioStatus
       });
     }
   });
@@ -133,25 +105,45 @@ io.on('connection', (socket) => {
     console.log('User disconnected:', socket.id);
     
     // Find the room the user was in
-    for (const [roomId, room] of rooms.entries()) {
+    for (const [roomName, room] of rooms.entries()) {
       if (room.users.has(socket.id)) {
         const userName = room.users.get(socket.id).name;
         room.users.delete(socket.id);
-        room.audioSessions.delete(socket.id);
         
         // Notify others in the room
-        socket.to(roomId).emit('user-left', {
+        socket.to(roomName).emit('user-left', {
           userId: socket.id,
-          userName: userName,
-          users: Array.from(room.users.values())
+          userName: userName
         });
         
         // Remove room if empty
         if (room.users.size === 0) {
-          rooms.delete(roomId);
+          rooms.delete(roomName);
         }
         
         break;
+      }
+    }
+  });
+
+  // Handle leaving a room
+  socket.on('leave-room', (data) => {
+    const { roomName } = data;
+    const room = rooms.get(roomName);
+    
+    if (room && room.users.has(socket.id)) {
+      const userName = room.users.get(socket.id).name;
+      room.users.delete(socket.id);
+      
+      // Notify others in the room
+      socket.to(roomName).emit('user-left', {
+        userId: socket.id,
+        userName: userName
+      });
+      
+      // Remove room if empty
+      if (room.users.size === 0) {
+        rooms.delete(roomName);
       }
     }
   });
