@@ -355,11 +355,25 @@
         let roomName = '';
         let userName = '';
         
-        // WebRTC configuration
+        // WebRTC configuration with TURN server
         const configuration = {
             iceServers: [
                 { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
+                { 
+                    urls: 'turn:openrelay.metered.ca:80',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                { 
+                    urls: 'turn:openrelay.metered.ca:443',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                },
+                { 
+                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                    username: 'openrelayproject',
+                    credential: 'openrelayproject'
+                }
             ]
         };
         
@@ -375,7 +389,7 @@
         socket.on('user-joined', (data) => {
             addSystemMessage(`${data.userName} joined the call`);
             addParticipantToList(data.userId, data.userName);
-            createPeerConnection(data.userId, data.userName, false);
+            createPeerConnection(data.userId, data.userName, true);
         });
         
         socket.on('user-left', (data) => {
@@ -389,12 +403,13 @@
         });
         
         socket.on('offer', async (data) => {
-            if (peers[data.from]) {
-                await peers[data.from].setRemoteDescription(data.offer);
-                const answer = await peers[data.from].createAnswer();
-                await peers[data.from].setLocalDescription(answer);
-                socket.emit('answer', { to: data.from, answer });
+            if (!peers[data.from]) {
+                await createPeerConnection(data.from, data.userName, false);
             }
+            await peers[data.from].setRemoteDescription(data.offer);
+            const answer = await peers[data.from].createAnswer();
+            await peers[data.from].setLocalDescription(answer);
+            socket.emit('answer', { to: data.from, answer });
         });
         
         socket.on('answer', async (data) => {
@@ -530,7 +545,7 @@
         }
         
         // Create a peer connection
-        function createPeerConnection(userId, userName, isInitiator) {
+        async function createPeerConnection(userId, userName, isInitiator) {
             const peer = new RTCPeerConnection(configuration);
             
             // Add local stream to peer connection
@@ -546,6 +561,8 @@
                 audio.srcObject = event.streams[0];
                 audio.autoplay = true;
                 audio.volume = 1.0;
+                // Add a unique ID so we can remove it later if needed
+                audio.id = `audio-${userId}`;
                 document.body.appendChild(audio);
             };
             
@@ -559,24 +576,20 @@
                 }
             };
             
+            peers[userId] = peer;
+            
             // Create offer if initiator
             if (isInitiator) {
-                createOffer(peer, userId);
+                try {
+                    const offer = await peer.createOffer();
+                    await peer.setLocalDescription(offer);
+                    socket.emit('offer', { to: userId, offer });
+                } catch (error) {
+                    console.error('Error creating offer:', error);
+                }
             }
             
-            peers[userId] = peer;
             return peer;
-        }
-        
-        // Create offer
-        async function createOffer(peer, userId) {
-            try {
-                const offer = await peer.createOffer();
-                await peer.setLocalDescription(offer);
-                socket.emit('offer', { to: userId, offer });
-            } catch (error) {
-                console.error('Error creating offer:', error);
-            }
         }
         
         // Add participant to UI list
@@ -600,6 +613,12 @@
             const participantEl = document.getElementById(`participant-${userId}`);
             if (participantEl) {
                 participantEl.remove();
+            }
+            
+            // Remove the audio element if it exists
+            const audioEl = document.getElementById(`audio-${userId}`);
+            if (audioEl) {
+                audioEl.remove();
             }
             
             participants = participants.filter(p => p.userId !== userId);

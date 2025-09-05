@@ -38,6 +38,12 @@ io.on('connection', (socket) => {
     
     const room = rooms.get(roomName);
     
+    // Check if room is full (max 10 users)
+    if (room.users.size >= 10) {
+      socket.emit('room-full');
+      return;
+    }
+    
     // Add user to room
     room.users.set(socket.id, {
       id: socket.id,
