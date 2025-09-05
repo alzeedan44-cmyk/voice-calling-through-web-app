@@ -1,1023 +1,263 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Group Call - Connection Fix</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
-        }
-        
-        body {
-            background: #3b4a54;
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .container {
-            width: 100%;
-            max-width: 500px;
-            height: 90vh;
-            background: #111b21;
-            border-radius: 12px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-        }
-        
-        .header {
-            background: #202c33;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .back-btn {
-            color: #fff;
-            font-size: 20px;
-            cursor: pointer;
-        }
-        
-        .header-info {
-            flex: 1;
-        }
-        
-        .group-name {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-        
-        .group-status {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        .call-container {
-            flex: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .participants-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        
-        .participant {
-            background: #2a3942;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            position: relative;
-            min-height: 180px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .participant-avatar {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: #128c7e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            color: white;
-            margin-bottom: 15px;
-        }
-        
-        .participant-name {
-            font-size: 16px;
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
-        
-        .participant-status {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        .participant-muted {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-            background: rgba(0, 0, 0, 0.5);
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .call-controls {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            margin-top: auto;
-            padding: 20px 0;
-        }
-        
-        .control-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s ease;
-        }
-        
-        .hangup-btn {
-            background: #f15c6d;
-            color: white;
-        }
-        
-        .mute-btn, .video-btn, .speaker-btn {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-        }
-        
-        .active {
-            background: white;
-            color: #128c7e;
-        }
-        
-        .call-timer {
-            text-align: center;
-            font-size: 15px;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 20px;
-        }
-        
-        .add-participant-btn {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #128c7e;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
-        
-        .join-call-container {
-            padding: 30px 20px;
-            text-align: center;
-        }
-        
-        .join-title {
-            font-size: 22px;
-            margin-bottom: 20px;
-            color: #e9edef;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        input {
-            width: 100%;
-            padding: 12px 15px;
-            border-radius: 8px;
-            background: #2a3942;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
-            font-size: 16px;
-        }
-        
-        input:focus {
-            outline: none;
-            border-color: #128c7e;
-        }
-        
-        .join-btn {
-            background: #128c7e;
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.3s ease;
-        }
-        
-        .join-btn:hover {
-            background: #0c6b5e;
-        }
-        
-        .debug-panel {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-size: 12px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-        
-        .debug-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #4ecdc4;
-        }
-        
-        .debug-log {
-            color: #ccc;
-            margin: 2px 0;
-            font-family: monospace;
-            font-size: 11px;
-        }
-        
-        .connection-status {
-            padding: 8px;
-            border-radius: 4px;
-            margin-top: 10px;
-            text-align: center;
-        }
-        
-        .status-connected {
-            background: rgba(46, 204, 113, 0.2);
-            color: #2ecc71;
-        }
-        
-        .status-disconnected {
-            background: rgba(231, 76, 60, 0.2);
-            color: #e74c3c;
-        }
-        
-        .status-connecting {
-            background: rgba(241, 196, 15, 0.2);
-            color: #f1c40f;
-        }
-        
-        .troubleshoot-btn {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            margin-top: 15px;
-            cursor: pointer;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .fix-connection-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            margin-top: 10px;
-            cursor: pointer;
-        }
-        
-        @media (max-width: 500px) {
-            .container {
-                height: 100vh;
-                border-radius: 0;
-            }
-            
-            body {
-                padding: 0;
-            }
-            
-            .participants-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .call-controls {
-                gap: 20px;
-            }
-            
-            .control-btn {
-                width: 55px;
-                height: 55px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Voice Broadcast</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    header { background: #333; color: #fff; padding: 10px; }
+    .controls { margin: 10px; }
+    #participants { display: flex; flex-wrap: wrap; }
+    .participant { border: 1px solid #ccc; margin: 5px; padding: 10px; border-radius: 6px; }
+    .status { font-size: 0.9em; color: #555; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Join Call View -->
-        <div id="join-view" class="join-call-container">
-            <h2 class="join-title">Join Group Call</h2>
-            <div class="form-group">
-                <label for="group-name">Group Name</label>
-                <input type="text" id="group-name" placeholder="Enter group name" value="Family Group">
-            </div>
-            <div class="form-group">
-                <label for="user-name">Your Name</label>
-                <input type="text" id="user-name" placeholder="Enter your name" value="You">
-            </div>
-            <button class="join-btn" onclick="joinCall()">Join Call</button>
-            
-            <div class="debug-panel">
-                <div class="debug-title">Debug Info:</div>
-                <div id="debug-logs"></div>
-            </div>
-            
-            <div id="connection-status" class="connection-status status-disconnected">Disconnected</div>
-            
-            <button class="troubleshoot-btn" onclick="runConnectionTests()">
-                <i class="fas fa-bug"></i> Run Connection Tests
-            </button>
-            
-            <button class="fix-connection-btn" onclick="applyConnectionFix()">
-                <i class="fas fa-tools"></i> Apply Connection Fix
-            </button>
-        </div>
+  <header>
+    <h1>Voice Broadcast</h1>
+  </header>
 
-        <!-- Active Call View -->
-        <div id="active-call-view" class="hidden">
-            <div class="header">
-                <div class="back-btn" onclick="leaveCall()">
-                    <i class="fas fa-arrow-left"></i>
-                </div>
-                <div class="header-info">
-                    <div class="group-name" id="display-group-name">Family Group</div>
-                    <div class="group-status">End-to-end encrypted</div>
-                </div>
-            </div>
-            
-            <div class="call-container">
-                <div class="call-timer" id="call-timer">00:00</div>
-                
-                <div class="participants-grid" id="participants-container">
-                    <!-- Participants will be added here dynamically -->
-                </div>
-                
-                <div class="call-controls">
-                    <button class="control-btn mute-btn" id="mute-btn" onclick="toggleMute()">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                    <button class="control-btn video-btn" onclick="toggleVideo()">
-                        <i class="fas fa-video"></i>
-                    </button>
-                    <button class="control-btn hangup-btn" onclick="leaveCall()">
-                        <i class="fas fa-phone"></i>
-                    </button>
-                    <button class="control-btn speaker-btn" id="speaker-btn" onclick="toggleSpeaker()">
-                        <i class="fas fa-volume-up"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="debug-panel">
-                <div class="debug-title">WebRTC Status:</div>
-                <div id="webrtc-status">Initializing...</div>
-            </div>
-            
-            <button class="fix-connection-btn" onclick="restartIce()" style="margin: 10px auto; display: block;">
-                <i class="fas fa-sync-alt"></i> Restart ICE Connection
-            </button>
-            
-            <div class="add-participant-btn" onclick="addParticipant()">
-                <i class="fas fa-user-plus"></i>
-            </div>
-        </div>
-    </div>
+  <div class="controls">
+    <label>Room Name: <input type="text" id="room-name" placeholder="Enter room" /></label>
+    <label>User Name: <input type="text" id="user-name" placeholder="Enter your name" /></label>
+    <button id="join-btn">Join Room</button>
+    <button id="leave-btn" disabled>Leave Room</button>
+    <button id="mute-btn" disabled>Mute/Unmute</button>
+  </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        // DOM elements
-        const joinView = document.getElementById('join-view');
-        const activeCallView = document.getElementById('active-call-view');
-        const participantsContainer = document.getElementById('participants-container');
-        const callTimerElement = document.getElementById('call-timer');
-        const muteBtn = document.getElementById('mute-btn');
-        const speakerBtn = document.getElementById('speaker-btn');
-        const groupNameElement = document.getElementById('display-group-name');
-        const debugLogsElement = document.getElementById('debug-logs');
-        const connectionStatusElement = document.getElementById('connection-status');
-        const webrtcStatusElement = document.getElementById('webrtc-status');
-        
-        // Socket connection
-        const socket = io();
-        
-        // Call state variables
-        let isMuted = false;
-        let isSpeakerOn = false;
-        let callTimer = null;
-        let callDuration = 0;
-        let localStream = null;
-        let peers = {};
-        let participants = [];
-        let roomName = '';
-        let userName = '';
-        let connectionAttempts = 0;
-        let maxConnectionAttempts = 3;
-        
-        // WebRTC configuration with multiple STUN/TURN servers
-        const configuration = {
-            iceServers: [
-                // Google's STUN servers
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                { urls: 'stun:stun3.l.google.com:19302' },
-                { urls: 'stun:stun4.l.google.com:19302' },
-                
-                // Fallback STUN servers
-                { urls: 'stun:stun.services.mozilla.com:3478' },
-                { urls: 'stun:stun.stunprotocol.org:3478' },
-                
-                // TURN servers (essential for NAT traversal)
-                {
-                    urls: 'turn:openrelay.metered.ca:80',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                {
-                    urls: 'turn:openrelay.metered.ca:443',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                {
-                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                // Additional free TURN servers
-                {
-                    urls: 'turn:numb.viagenie.ca:3478',
-                    credential: 'muazkh',
-                    username: 'webrtc@live.com'
-                },
-                {
-                    urls: 'turn:turn.bistri.com:80',
-                    credential: 'homeo',
-                    username: 'homeo'
-                }
-            ],
-            iceCandidatePoolSize: 10,
-            iceTransportPolicy: 'all', // Use both relay and non-relay candidates
-            bundlePolicy: 'max-bundle',
-            rtcpMuxPolicy: 'require'
-        };
-        
-        // Initialize with sample data
-        document.getElementById('group-name').value = 'Family Group';
-        document.getElementById('user-name').value = 'You';
-        
-        // Debug logging
-        function debugLog(message) {
-            const logEntry = document.createElement('div');
-            logEntry.className = 'debug-log';
-            logEntry.textContent = new Date().toLocaleTimeString() + ' - ' + message;
-            debugLogsElement.appendChild(logEntry);
-            debugLogsElement.scrollTop = debugLogsElement.scrollHeight;
-            console.log(message);
+  <div id="status" class="controls">Status: Disconnected</div>
+
+  <div id="participants"></div>
+
+  <div class="controls">
+    <button id="debug-toggle">Toggle Debug Logs</button>
+  </div>
+
+  <pre id="debug-log" style="display:none; background:#f4f4f4; padding:10px; height:200px; overflow:auto;"></pre>
+
+  <!-- ✅ Use CDN for socket.io -->
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+
+  <script>
+    const joinBtn = document.getElementById('join-btn');
+    const leaveBtn = document.getElementById('leave-btn');
+    const muteBtn = document.getElementById('mute-btn');
+    const roomNameInput = document.getElementById('room-name');
+    const userNameInput = document.getElementById('user-name');
+    const statusEl = document.getElementById('status');
+    const participantsEl = document.getElementById('participants');
+    const debugLogEl = document.getElementById('debug-log');
+    const debugToggle = document.getElementById('debug-toggle');
+
+    let socket;
+    let localStream;
+    let peers = {};
+    let currentRoom = '';
+    let currentUserName = '';
+    let isMuted = false;
+    let debugVisible = false;
+
+    function updateConnectionStatus(msg, state) {
+      statusEl.textContent = 'Status: ' + msg;
+      statusEl.style.color = (state === 'connected') ? 'green' :
+                             (state === 'connecting') ? 'orange' : 'red';
+    }
+
+    function debugLog(msg) {
+      const line = `[${new Date().toLocaleTimeString()}] ${msg}\n`;
+      debugLogEl.textContent += line;
+      debugLogEl.scrollTop = debugLogEl.scrollHeight;
+      console.log(msg);
+    }
+
+    debugToggle.addEventListener('click', () => {
+      debugVisible = !debugVisible;
+      debugLogEl.style.display = debugVisible ? 'block' : 'none';
+    });
+
+    async function initLocalStream() {
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        debugLog('Local microphone access granted');
+      } catch (err) {
+        debugLog('Error accessing mic: ' + err.message);
+        alert('Microphone access denied!');
+      }
+    }
+
+    function addParticipantToList(userId, userName, isLocal = false) {
+      let card = document.createElement('div');
+      card.className = 'participant';
+      card.id = 'participant-' + userId;
+      card.innerHTML = `<strong>${isLocal ? '(You) ' : ''}${userName}</strong>
+                        <div class="status" id="status-${userId}">Audio: Active</div>`;
+      participantsEl.appendChild(card);
+
+      // Attach audio tag for remote users
+      if (!isLocal) {
+        const audio = document.createElement('audio');
+        audio.id = `audio-${userId}`;
+        audio.autoplay = true;
+        audio.controls = false;
+        card.appendChild(audio);
+      }
+    }
+
+    function removeParticipantFromList(userId) {
+      const el = document.getElementById('participant-' + userId);
+      if (el) el.remove();
+    }
+
+    async function createPeerConnection(userId, userName, initiator) {
+      debugLog(`Creating peer connection with ${userName} (${userId})`);
+      const pc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+      });
+      peers[userId] = pc;
+
+      // Local stream
+      if (localStream) {
+        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+      }
+
+      // ICE
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          debugLog(`Sending ICE to ${userId}`);
+          socket.emit('ice-candidate', { to: userId, candidate: event.candidate });
         }
-        
-        // Update connection status
-        function updateConnectionStatus(status, type) {
-            connectionStatusElement.textContent = status;
-            connectionStatusElement.className = 'connection-status status-' + type;
+      };
+
+      // Remote stream
+      pc.ontrack = (event) => {
+        debugLog(`Received remote track from ${userName}`);
+        const audio = document.getElementById(`audio-${userId}`);
+        if (audio) {
+          audio.srcObject = event.streams[0];
         }
-        
-        // Update WebRTC status
-        function updateWebRTCStatus(status) {
-            webrtcStatusElement.textContent = status;
-        }
-        
-        // Apply connection fix
-        function applyConnectionFix() {
-            debugLog('Applying connection fix...');
-            
-            // Force TURN servers by changing iceTransportPolicy
-            configuration.iceTransportPolicy = 'relay';
-            debugLog('Set ICE transport policy to "relay" (TURN servers only)');
-            
-            // Increase ICE candidate pool size
-            configuration.iceCandidatePoolSize = 20;
-            debugLog('Increased ICE candidate pool size to 20');
-            
-            // Reset connection attempts
-            connectionAttempts = 0;
-            
-            debugLog('Connection fix applied. Please try joining the call again.');
-        }
-        
-        // Restart ICE connection
-        function restartIce() {
-            debugLog('Restarting ICE connections...');
-            
-            for (const userId in peers) {
-                if (peers[userId] && typeof peers[userId].restartIce === 'function') {
-                    try {
-                        peers[userId].restartIce();
-                        debugLog(`Restarted ICE for connection: ${userId}`);
-                    } catch (error) {
-                        debugLog(`Error restarting ICE for ${userId}: ${error.message}`);
-                    }
-                }
-            }
-        }
-        
-        // Run connection tests
-        function runConnectionTests() {
-            debugLog('Running connection tests...');
-            
-            // Test WebRTC support
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                debugLog('ERROR: WebRTC not supported in this browser');
-                return;
-            }
-            
-            // Test microphone access
-            navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(stream => {
-                    debugLog('Microphone access: OK');
-                    stream.getTracks().forEach(track => track.stop());
-                    
-                    // Test WebRTC peer connection
-                    const testPeer = new RTCPeerConnection(configuration);
-                    
-                    testPeer.createDataChannel('test');
-                    
-                    // Set a longer timeout for ICE gathering
-                    const iceGatheringTimeout = setTimeout(() => {
-                        debugLog('ICE gathering timeout - may indicate firewall issues');
-                        testPeer.close();
-                    }, 5000);
-                    
-                    testPeer.createOffer()
-                        .then(offer => {
-                            debugLog('WebRTC offer creation: OK');
-                            return testPeer.setLocalDescription(offer);
-                        })
-                        .then(() => {
-                            debugLog('WebRTC local description: OK');
-                            
-                            // Check ICE gathering state with more time
-                            const checkIceState = () => {
-                                if (testPeer.iceGatheringState === 'complete') {
-                                    clearTimeout(iceGatheringTimeout);
-                                    debugLog('ICE gathering: COMPLETE');
-                                    testPeer.close();
-                                } else if (testPeer.iceGatheringState === 'gathering') {
-                                    debugLog('ICE gathering: IN PROGRESS');
-                                    setTimeout(checkIceState, 1000);
-                                } else {
-                                    debugLog(`ICE gathering: ${testPeer.iceGatheringState}`);
-                                    setTimeout(checkIceState, 1000);
-                                }
-                            };
-                            
-                            checkIceState();
-                        })
-                        .catch(error => {
-                            clearTimeout(iceGatheringTimeout);
-                            debugLog('WebRTC test failed: ' + error.message);
-                            testPeer.close();
-                        });
-                })
-                .catch(error => {
-                    debugLog('Microphone access denied: ' + error.message);
-                });
-        }
-        
-        // Socket event listeners
-        socket.on('connect', () => {
-            debugLog('Connected to server with ID: ' + socket.id);
-            updateConnectionStatus('Connected to signaling server', 'connected');
+      };
+
+      // Offer if initiator
+      if (initiator) {
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        socket.emit('offer', { to: userId, offer });
+        debugLog(`Sent offer to ${userId}`);
+      }
+
+      return pc;
+    }
+
+    joinBtn.onclick = async () => {
+      const room = roomNameInput.value.trim();
+      const name = userNameInput.value.trim();
+      if (!room || !name) {
+        alert('Enter room and name');
+        return;
+      }
+
+      await initLocalStream();
+
+      // Connect to server
+      socket = io('http://localhost:3000'); // 👉 change to your server URL
+      socket.on('connect', () => {
+        debugLog('Socket connected: ' + socket.id);
+        updateConnectionStatus('Connected to signaling server', 'connected');
+        socket.emit('join-room', { roomName: room, userName: name });
+      });
+      socket.on('connect_error', (err) => {
+        debugLog('Socket connect_error: ' + err.message);
+        updateConnectionStatus('Signaling error', 'disconnected');
+      });
+
+      // Existing users
+      socket.on('all-users', async (users) => {
+        debugLog('Existing users: ' + JSON.stringify(users));
+        users.forEach(async (id) => {
+          addParticipantToList(id, 'Remote', false);
+          await createPeerConnection(id, 'Remote', true);
         });
-        
-        socket.on('disconnect', () => {
-            debugLog('Disconnected from server');
-            updateConnectionStatus('Disconnected from signaling server', 'disconnected');
+      });
+
+      // New join
+      socket.on('user-joined', async ({ userId, userName }) => {
+        debugLog(`${userName} joined (${userId})`);
+        addParticipantToList(userId, userName, false);
+        await createPeerConnection(userId, userName, true);
+      });
+
+      // Offer
+      socket.on('offer', async ({ from, offer }) => {
+        debugLog('Got offer from ' + from);
+        const pc = await createPeerConnection(from, 'Remote', false);
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit('answer', { to: from, answer });
+        debugLog('Sent answer to ' + from);
+      });
+
+      // Answer
+      socket.on('answer', async ({ from, answer }) => {
+        debugLog('Got answer from ' + from);
+        const pc = peers[from];
+        if (pc) await pc.setRemoteDescription(new RTCSessionDescription(answer));
+      });
+
+      // ICE
+      socket.on('ice-candidate', async ({ from, candidate }) => {
+        debugLog('Got ICE from ' + from);
+        const pc = peers[from];
+        if (pc) {
+          try {
+            await pc.addIceCandidate(new RTCIceCandidate(candidate));
+          } catch (e) {
+            debugLog('ICE error: ' + e.message);
+          }
+        }
+      });
+
+      // Leave
+      socket.on('user-left', ({ userId }) => {
+        debugLog('User left: ' + userId);
+        if (peers[userId]) peers[userId].close();
+        delete peers[userId];
+        removeParticipantFromList(userId);
+      });
+
+      addParticipantToList(socket.id, name, true);
+      currentRoom = room;
+      currentUserName = name;
+      joinBtn.disabled = true;
+      leaveBtn.disabled = false;
+      muteBtn.disabled = false;
+      updateConnectionStatus('Joined room ' + room, 'connected');
+    };
+
+    leaveBtn.onclick = () => {
+      if (socket && currentRoom) {
+        socket.emit('leave-room', { roomName: currentRoom });
+        socket.disconnect();
+      }
+      Object.values(peers).forEach(pc => pc.close());
+      peers = {};
+      participantsEl.innerHTML = '';
+      joinBtn.disabled = false;
+      leaveBtn.disabled = true;
+      muteBtn.disabled = true;
+      updateConnectionStatus('Disconnected', 'disconnected');
+    };
+
+    muteBtn.onclick = () => {
+      if (localStream) {
+        localStream.getAudioTracks().forEach(track => {
+          track.enabled = isMuted;
         });
-        
-        socket.on('user-joined', (data) => {
-            debugLog(`${data.userName} joined the call`);
-            addSystemMessage(`${data.userName} joined the call`);
-            addParticipantToList(data.userId, data.userName);
-            createPeerConnection(data.userId, data.userName, true);
-        });
-        
-        socket.on('user-left', (data) => {
-            debugLog(`${data.userName} left the call`);
-            addSystemMessage(`${data.userName} left the call`);
-            removeParticipantFromList(data.userId);
-            
-            if (peers[data.userId]) {
-                peers[data.userId].close();
-                delete peers[data.userId];
-            }
-        });
-        
-        socket.on('offer', async (data) => {
-            debugLog(`Received offer from ${data.from}`);
-            if (!peers[data.from]) {
-                await createPeerConnection(data.from, 'Remote User', false);
-            }
-            try {
-                await peers[data.from].setRemoteDescription(data.offer);
-                const answer = await peers[data.from].createAnswer();
-                await peers[data.from].setLocalDescription(answer);
-                socket.emit('answer', { to: data.from, answer });
-                debugLog(`Sent answer to ${data.from}`);
-            } catch (error) {
-                debugLog('Error handling offer: ' + error.message);
-            }
-        });
-        
-        socket.on('answer', async (data) => {
-            debugLog(`Received answer from ${data.from}`);
-            if (peers[data.from]) {
-                try {
-                    await peers[data.from].setRemoteDescription(data.answer);
-                } catch (error) {
-                    debugLog('Error setting remote description: ' + error.message);
-                }
-            }
-        });
-        
-        socket.on('ice-candidate', async (data) => {
-            debugLog(`Received ICE candidate from ${data.from}`);
-            if (peers[data.from]) {
-                try {
-                    await peers[data.from].addIceCandidate(data.candidate);
-                } catch (error) {
-                    debugLog('Error adding ICE candidate: ' + error.message);
-                }
-            }
-        });
-        
-        socket.on('user-audio-changed', (data) => {
-            updateParticipantAudioStatus(data.userId, data.audioStatus);
-        });
-        
-        // Join the call
-        async function joinCall() {
-            roomName = document.getElementById('group-name').value;
-            userName = document.getElementById('user-name').value;
-            
-            if (!roomName || !userName) {
-                alert('Please enter both group name and your name');
-                return;
-            }
-            
-            // Check if we've exceeded connection attempts
-            if (connectionAttempts >= maxConnectionAttempts) {
-                debugLog('Maximum connection attempts reached. Please try applying the connection fix.');
-                return;
-            }
-            
-            connectionAttempts++;
-            debugLog(`Connection attempt ${connectionAttempts} of ${maxConnectionAttempts}`);
-            
-            try {
-                debugLog('Requesting microphone access...');
-                // Get microphone access
-                localStream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    },
-                    video: false
-                });
-                
-                debugLog('Microphone access granted');
-                
-                // Update group name display
-                groupNameElement.textContent = roomName;
-                
-                // Show active call view
-                joinView.classList.add('hidden');
-                activeCallView.classList.remove('hidden');
-                
-                // Add current user to participants list
-                addParticipantToList(socket.id, userName, true);
-                
-                // Start call timer
-                startCallTimer();
-                
-                // Join the room
-                socket.emit('join-room', { roomName, userName });
-                debugLog(`Joined room: ${roomName} as ${userName}`);
-                
-            } catch (error) {
-                debugLog('Error accessing microphone: ' + error.message);
-                alert('Could not access your microphone. Please check permissions.');
-            }
-        }
-        
-        // Leave the call
-        function leaveCall() {
-            // Stop call timer
-            stopCallTimer();
-            
-            // Close all peer connections
-            for (const userId in peers) {
-                peers[userId].close();
-            }
-            peers = {};
-            
-            // Stop local stream
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-            
-            // Leave the room
-            socket.emit('leave-room', { roomName, userName });
-            
-            // Show join view
-            activeCallView.classList.add('hidden');
-            joinView.classList.remove('hidden');
-            
-            // Clear participants
-            participantsContainer.innerHTML = '';
-            participants = [];
-            
-            // Reset connection attempts
-            connectionAttempts = 0;
-            
-            debugLog('Left the call');
-        }
-        
-        // Toggle mute
-        function toggleMute() {
-            isMuted = !isMuted;
-            muteBtn.classList.toggle('active', isMuted);
-            
-            // Mute/unmute local audio track
-            if (localStream) {
-                localStream.getAudioTracks().forEach(track => {
-                    track.enabled = !isMuted;
-                });
-            }
-            
-            // Notify other users
-            socket.emit('audio-change', { 
-                roomName, 
-                userId: socket.id, 
-                userName, 
-                audioStatus: isMuted ? 'muted' : 'unmuted' 
-            });
-            
-            // Update UI
-            updateParticipantAudioStatus(socket.id, isMuted ? 'muted' : 'unmuted');
-            
-            debugLog(isMuted ? 'Microphone muted' : 'Microphone unmuted');
-        }
-        
-        // Toggle speaker
-        function toggleSpeaker() {
-            isSpeakerOn = !isSpeakerOn;
-            speakerBtn.classList.toggle('active', isSpeakerOn);
-            
-            // Note: Speaker control requires specific implementation for audio routing
-            // This would be implemented in a complete application
-            debugLog(isSpeakerOn ? 'Speaker enabled' : 'Speaker disabled');
-        }
-        
-        // Toggle video (simulated)
-        function toggleVideo() {
-            // In a real app, this would toggle video stream
-            alert('Video toggle would be implemented in a complete application with WebRTC video');
-        }
-        
-        // Add a participant (simulated)
-        function addParticipant() {
-            // In a real app, this would invite another user to the call
-            alert('Participant invitation would be implemented in a complete application');
-        }
-        
-        // Create a peer connection
-        async function createPeerConnection(userId, userName, isInitiator) {
-            debugLog(`Creating peer connection with ${userName} (${userId}), initiator: ${isInitiator}`);
-            
-            const peer = new RTCPeerConnection(configuration);
-            
-            // Add event listeners for debugging
-            peer.addEventListener('iceconnectionstatechange', () => {
-                debugLog(`ICE connection state for ${userName}: ${peer.iceConnectionState}`);
-                updateWebRTCStatus(`ICE: ${peer.iceConnectionState}`);
-                
-                if (peer.iceConnectionState === 'connected') {
-                    debugLog('Successfully connected to peer!');
-                } else if (peer.iceConnectionState === 'failed') {
-                    debugLog('ICE connection failed. Trying to restart...');
-                    // Try to restart ICE
-                    setTimeout(() => {
-                        if (peer.iceConnectionState === 'failed') {
-                            if (typeof peer.restartIce === 'function') {
-                                peer.restartIce();
-                                debugLog('ICE connection restarted');
-                            } else {
-                                debugLog('Cannot restart ICE - method not supported');
-                            }
-                        }
-                    }, 1000);
-                }
-            });
-            
-            peer.addEventListener('connectionstatechange', () => {
-                debugLog(`Connection state for ${userName}: ${peer.connectionState}`);
-                updateWebRTCStatus(`Connection: ${peer.connectionState}`);
-                
-                if (peer.connectionState === 'connected') {
-                    debugLog('WebRTC connection established successfully!');
-                } else if (peer.connectionState === 'failed') {
-                    debugLog('WebRTC connection failed');
-                }
-            });
-            
-            peer.addEventListener('signalingstatechange', () => {
-                debugLog(`Signaling state for ${userName}: ${peer.signalingState}`);
-            });
-            
-            peer.addEventListener('icecandidate', (event) => {
-                if (event.candidate) {
-                    debugLog(`Sending ICE candidate to ${userId}, type: ${event.candidate.type}`);
-                    socket.emit('ice-candidate', {
-                        to: userId,
-                        candidate: event.candidate
-                    });
-                } else {
-                    debugLog('ICE gathering complete');
-                }
-            });
-            
-            peer.addEventListener('icegatheringstatechange', () => {
-                debugLog(`ICE gathering state: ${peer.iceGatheringState}`);
-            });
-            
-            // Add local stream to peer connection
-            if (localStream) {
-                localStream.getTracks().forEach(track => {
-                    peer.addTrack(track, localStream);
-                });
-            }
-            
-            // Handle remote stream
-            peer.ontrack = (event) => {
-                debugLog(`Received remote stream from ${userName}`);
-                const audio = document.createElement('audio');
-                audio.srcObject = event.streams[0];
-                audio.autoplay = true;
-                audio.volume = 1.0;
-                // Add a unique ID so we can remove it later if needed
-                audio.id = `audio-${userId}`;
-                document.body.appendChild(audio);
-                
-                // Try to play the audio in case autoplay is blocked
-                audio.play().catch(error => {
-                    debugLog('Error playing audio: ' + error.message);
-                    // Try again with user gesture
-                    audio.setAttribute('muted', '');
-                    audio.play().then(() => {
-                        audio.removeAttribute('muted');
-                    }).catch(err => {
-                        debugLog('Still cannot play audio: ' + err.message);
-                    });
-                });
-            };
-            
-            peers[userId] = peer;
-            
-            // Create offer if initiator
-            if (isInitiator) {
-                try {
-                    const offerOptions = {
-                        offerToReceiveAudio: true,
-                        offerToReceiveVideo: false
-                    };
-                    
-                    const offer = await peer.createOffer(offerOptions);
-                    await peer.setLocalDescription(offer);
-                    socket.emit('offer', { to: userId, offer });
-                    debugLog(`Sent offer to ${userId}`);
-                } catch (error) {
-                    debugLog('Error creating offer: ' + error.message);
-                }
-            }
-            
-            return peer;
-        }
-        
-        // Add participant to UI list
-        function addParticipantToList(userId, userName, isSelf = false) {
-            const participantEl = document.createElement('div');
-            participantEl.className = 'participant';
-            participantEl.id = `participant-${userId}`;
-            
-            participantEl.innerHTML = `
-                <div class="participant-avatar">${userName.charAt(0)}</div>
-                <div class="participant-name">${isSelf ? 'You' : userName}</div>
-                <div class="participant-status">Connected</div>
-            `;
-            
-            participantsContainer.appendChild(participantEl);
-            participants.push({ userId, userName });
-        }
-        
-        // Remove participant from UI list
-        function removeParticipantFromList(userId) {
-            const participantEl = document.getElementById(`participant-${userId}`);
-            if (participantEl) {
-                participantEl.remove();
-            }
-            
-            // Remove the audio element if it exists
-            const audioEl = document.getElementById(`audio-${userId}`);
-            if (audioEl) {
-                audioEl.remove();
-            }
-            
-            participants = participants.filter(p => p.userId !== userId);
-        }
-        
-        // Update participant audio status
-        function updateParticipantAudioStatus(userId, audioStatus) {
-            const participantEl = document.getElementById(`participant-${userId}`);
-            if (!participantEl) return;
-            
-            // Remove existing muted indicator if present
-            const existingMuted = participantEl.querySelector('.participant-muted');
-            if (existingMuted) {
-                existingMuted.remove();
-            }
-            
-            // Add muted indicator if muted
-            if (audioStatus === 'muted') {
-                const mutedEl = document.createElement('div');
-                mutedEl.className = 'participant-muted';
-                mutedEl.innerHTML = '<i class="fas fa-microphone-slash"></i>';
-                participantEl.appendChild(mutedEl);
-            }
-        }
-        
-        // Add system message
-        function addSystemMessage(message) {
-            // This would display system messages in a chat interface
-            debugLog('System: ' + message);
-        }
-        
-        // Start call timer
-        function startCallTimer() {
-            callDuration = 0;
-            callTimer = setInterval(() => {
-                callDuration++;
-                const minutes = Math.floor(callDuration / 60).toString().padStart(2, '0');
-                const seconds = (callDuration % 60).toString().padStart(2, '0');
-                callTimerElement.textContent = `${minutes}:${seconds}`;
-            }, 1000);
-        }
-        
-        // Stop call timer
-        function stopCallTimer() {
-            if (callTimer) {
-                clearInterval(callTimer);
-                callTimer = null;
-            }
-        }
-    </script>
+        isMuted = !isMuted;
+        const statusText = isMuted ? 'Audio: Muted' : 'Audio: Active';
+        document.getElementById('status-' + socket.id).textContent = statusText;
+      }
+    };
+  </script>
 </body>
 </html>
