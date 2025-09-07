@@ -20,7 +20,6 @@ app.use(cors());
 
 // Store active rooms and users
 const rooms = new Map();
-const users = new Map();
 
 // Simple user authentication (in production, use a proper database)
 const userAccounts = new Map();
@@ -120,15 +119,6 @@ io.on('connection', (socket) => {
     socket.to(data.target).emit('ice-candidate', {
       candidate: data.candidate,
       from: socket.id
-    });
-  });
-  
-  // Chat messages
-  socket.on('send-chat-message', (data) => {
-    socket.to(data.roomId).emit('receive-chat-message', {
-      message: data.message,
-      from: socket.id,
-      userName: data.userName
     });
   });
   

@@ -1,1257 +1,209 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VideoConnect Pro - Secure Communication</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #128c7e;
-            --primary-dark: #075e54;
-            --secondary: #25d366;
-            --dark: #111b21;
-            --light-dark: #2a3942;
-            --light: #e9edef;
-            --danger: #f15c6d;
-            --warning: #f39c12;
-            --success: #2ecc71;
-            --info: #3498db;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
-        }
-        
-        body {
-            background: #3b4a54;
-            color: #fff;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .container {
-            width: 100%;
-            max-width: 500px;
-            height: 90vh;
-            background: #111b21;
-            border-radius: 12px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            position: relative;
-        }
-        
-        .header {
-            background: #202c33;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .back-btn {
-            color: #fff;
-            font-size: 20px;
-            cursor: pointer;
-        }
-        
-        .header-info {
-            flex: 1;
-        }
-        
-        .group-name {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-        
-        .group-status {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        .call-container {
-            flex: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .participants-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        
-        .participant {
-            background: #2a3942;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            position: relative;
-            min-height: 180px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .participant-video {
-            width: 100%;
-            height: 120px;
-            background: var(--dark);
-            border-radius: 8px;
-            margin-bottom: 10px;
-            overflow: hidden;
-        }
-        
-        .participant-video video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 8px;
-        }
-        
-        .participant-avatar {
-            width: 70px;
-            height: 70px;
-            border-radius: 50%;
-            background: #128c7e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            color: white;
-            margin-bottom: 15px;
-        }
-        
-        .participant-name {
-            font-size: 16px;
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
-        
-        .participant-status {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        .participant-muted {
-            position: absolute;
-            bottom: 15px;
-            right: 15px;
-            background: rgba(0, 0, 0, 0.5);
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .call-controls {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-top: auto;
-            padding: 20px 0;
-        }
-        
-        .control-btn {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            cursor: pointer;
-            border: none;
-            transition: all 0.3s ease;
-        }
-        
-        .hangup-btn {
-            background: #f15c6d;
-            color: white;
-        }
-        
-        .mute-btn, .video-btn, .speaker-btn, .chat-btn {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-        }
-        
-        .active {
-            background: white;
-            color: #128c7e;
-        }
-        
-        .call-timer {
-            text-align: center;
-            font-size: 15px;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 20px;
-        }
-        
-        .join-call-container {
-            padding: 30px 20px;
-            text-align: center;
-        }
-        
-        .join-title {
-            font-size: 22px;
-            margin-bottom: 20px;
-            color: #e9edef;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        input {
-            width: 100%;
-            padding: 12px 15px;
-            border-radius: 8px;
-            background: #2a3942;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
-            font-size: 16px;
-        }
-        
-        input:focus {
-            outline: none;
-            border-color: #128c7e;
-        }
-        
-        .join-btn {
-            background: #128c7e;
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: background 0.3s ease;
-        }
-        
-        .join-btn:hover {
-            background: #0c6b5e;
-        }
-        
-        .debug-panel {
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-size: 12px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-        
-        .debug-title {
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #4ecdc4;
-        }
-        
-        .debug-log {
-            color: #ccc;
-            margin: 2px 0;
-            font-family: monospace;
-            font-size: 11px;
-        }
-        
-        .connection-status {
-            padding: 8px;
-            border-radius: 4px;
-            margin-top: 10px;
-            text-align: center;
-        }
-        
-        .status-connected {
-            background: rgba(46, 204, 113, 0.2);
-            color: #2ecc71;
-        }
-        
-        .status-disconnected {
-            background: rgba(231, 76, 60, 0.2);
-            color: #e74c3c;
-        }
-        
-        .status-connecting {
-            background: rgba(241, 196, 15, 0.2);
-            color: #f1c40f;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .auth-container {
-            padding: 30px 20px;
-        }
-        
-        .auth-tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .auth-tab {
-            flex: 1;
-            text-align: center;
-            padding: 15px;
-            cursor: pointer;
-            opacity: 0.7;
-        }
-        
-        .auth-tab.active {
-            opacity: 1;
-            border-bottom: 2px solid #128c7e;
-        }
-        
-        .auth-form {
-            display: none;
-        }
-        
-        .auth-form.active {
-            display: block;
-        }
-        
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: #202c33;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .profile-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: #128c7e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            color: white;
-        }
-        
-        .profile-info {
-            flex: 1;
-        }
-        
-        .profile-name {
-            font-weight: 600;
-            margin-bottom: 3px;
-        }
-        
-        .profile-email {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        .logout-btn {
-            background: none;
-            border: none;
-            color: #128c7e;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .privacy-notice {
-            background: rgba(18, 140, 126, 0.2);
-            padding: 10px;
-            border-radius: 8px;
-            margin: 15px 0;
-            font-size: 13px;
-            text-align: center;
-        }
-        
-        .security-badge {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 10px;
-            font-size: 13px;
-            color: #4ecdc4;
-        }
-        
-        .chat-container {
-            position: absolute;
-            bottom: 100px;
-            right: 20px;
-            width: 300px;
-            height: 400px;
-            background: var(--light-dark);
-            border-radius: 12px;
-            display: flex;
-            flex-direction: column;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            z-index: 100;
-        }
-        
-        .chat-header {
-            padding: 15px;
-            background: var(--primary-dark);
-            border-top-left-radius: 12px;
-            border-top-right-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .chat-title {
-            font-weight: 600;
-        }
-        
-        .close-chat {
-            cursor: pointer;
-        }
-        
-        .chat-messages {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .message {
-            padding: 10px;
-            border-radius: 8px;
-            max-width: 80%;
-            word-wrap: break-word;
-        }
-        
-        .message.incoming {
-            background: var(--dark);
-            align-self: flex-start;
-        }
-        
-        .message.outgoing {
-            background: var(--primary);
-            align-self: flex-end;
-        }
-        
-        .message-sender {
-            font-weight: 600;
-            font-size: 12px;
-            margin-bottom: 5px;
-        }
-        
-        .chat-input-container {
-            padding: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .chat-input {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .chat-input input {
-            flex: 1;
-            padding: 10px 15px;
-            font-size: 14px;
-        }
-        
-        .send-btn {
-            background: var(--primary);
-            border: none;
-            border-radius: 8px;
-            color: white;
-            padding: 0 15px;
-            cursor: pointer;
-        }
-        
-        .notification {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--light-dark);
-            padding: 15px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 1000;
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-        }
-        
-        .notification.show {
-            transform: translateX(0);
-        }
-        
-        @media (max-width: 500px) {
-            .container {
-                height: 100vh;
-                border-radius: 0;
-            }
-            
-            body {
-                padding: 0;
-            }
-            
-            .participants-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .call-controls {
-                gap: 15px;
-            }
-            
-            .control-btn {
-                width: 45px;
-                height: 45px;
-                font-size: 16px;
-            }
-            
-            .chat-container {
-                width: 90%;
-                right: 5%;
-                height: 350px;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Meet - Login & Meeting</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      width: 100%;
+      max-width: 900px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    .hidden {
+      display: none;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: none;
+      border-radius: 5px;
+      background: #007bff;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .meeting-container {
+      display: flex;
+      flex-direction: column;
+    }
+    .participants {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      flex: 1;
+      margin-bottom: 10px;
+    }
+    .participant-video {
+      background: #000;
+      border-radius: 10px;
+      aspect-ratio: 16/9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-size: 14px;
+    }
+    .meeting-controls {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    .meeting-controls button {
+      width: auto;
+      padding: 10px 20px;
+      background: #dc3545;
+    }
+    .meeting-controls button:hover {
+      background: #a71d2a;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Authentication View -->
-        <div id="auth-view" class="auth-container">
-            <h2 class="join-title">VideoConnect Pro</h2>
-            
-            <div class="auth-tabs">
-                <div class="auth-tab active" data-tab="login">Login</div>
-                <div class="auth-tab" data-tab="register">Register</div>
-            </div>
-            
-            <!-- Login Form -->
-            <div id="login-form" class="auth-form active">
-                <div class="form-group">
-                    <label for="login-email">Email</label>
-                    <input type="email" id="login-email" placeholder="Enter your email">
-                </div>
-                <div class="form-group">
-                    <label for="login-password">Password</label>
-                    <input type="password" id="login-password" placeholder="Enter your password">
-                </div>
-                <button class="join-btn" onclick="login()">Login</button>
-                
-                <div class="privacy-notice">
-                    <i class="fas fa-shield-alt"></i> Your privacy is protected with end-to-end encryption
-                </div>
-            </div>
-            
-            <!-- Registration Form -->
-            <div id="register-form" class="auth-form">
-                <div class="form-group">
-                    <label for="register-name">Username</label>
-                    <input type="text" id="register-name" placeholder="Choose a username">
-                </div>
-                <div class="form-group">
-                    <label for="register-email">Email</label>
-                    <input type="email" id="register-email" placeholder="Enter your email">
-                </div>
-                <div class="form-group">
-                    <label for="register-password">Password</label>
-                    <input type="password" id="register-password" placeholder="Create a password">
-                </div>
-                <div class="form-group">
-                    <label for="register-confirm">Confirm Password</label>
-                    <input type="password" id="register-confirm" placeholder="Confirm your password">
-                </div>
-                <button class="join-btn" onclick="register()">Create Account</button>
-                
-                <div class="privacy-notice">
-                    <i class="fas fa-lock"></i> We never share your personal information with third parties
-                </div>
-            </div>
-        </div>
-
-        <!-- Join Call View -->
-        <div id="join-view" class="join-call-container hidden">
-            <div class="profile-header">
-                <div class="profile-avatar" id="profile-avatar">U</div>
-                <div class="profile-info">
-                    <div class="profile-name" id="profile-name">User</div>
-                    <div class="profile-email" id="profile-email">user@example.com</div>
-                </div>
-                <button class="logout-btn" onclick="logout()">Logout</button>
-            </div>
-            
-            <h2 class="join-title">Join Video Call</h2>
-            <div class="form-group">
-                <label for="room-name">Room Name</label>
-                <input type="text" id="room-name" placeholder="Enter room name">
-            </div>
-            <div class="form-group">
-                <label for="room-pin">Room PIN</label>
-                <input type="password" id="room-pin" placeholder="Enter room PIN">
-            </div>
-            <button class="join-btn" onclick="joinCall()">Join Call</button>
-            
-            <div class="security-badge">
-                <i class="fas fa-lock"></i> End-to-end encrypted
-            </div>
-            
-            <div class="debug-panel">
-                <div class="debug-title">Connection Info:</div>
-                <div id="debug-logs"></div>
-            </div>
-            
-            <div id="connection-status" class="connection-status status-disconnected">Disconnected</div>
-            
-            <div class="connection-quality">
-                <div id="quality-bar" class="quality-bar"></div>
-            </div>
-        </div>
-
-        <!-- Active Call View -->
-        <div id="active-call-view" class="hidden">
-            <div class="header">
-                <div class="back-btn" onclick="leaveCall()">
-                    <i class="fas fa-arrow-left"></i>
-                </div>
-                <div class="header-info">
-                    <div class="group-name" id="display-group-name">Video Call</div>
-                    <div class="group-status">End-to-end encrypted • <span id="encryption-status">Active</span></div>
-                </div>
-                <div class="header-btn" onclick="toggleChat()">
-                    <i class="fas fa-comment"></i>
-                </div>
-            </div>
-            
-            <div class="call-container">
-                <div class="call-timer" id="call-timer">00:00</div>
-                
-                <div class="participants-grid" id="participants-container">
-                    <!-- Participants will be added here dynamically -->
-                </div>
-                
-                <div class="call-controls">
-                    <button class="control-btn mute-btn" id="mute-btn" onclick="toggleMute()">
-                        <i class="fas fa-microphone"></i>
-                    </button>
-                    <button class="control-btn video-btn" id="video-btn" onclick="toggleVideo()">
-                        <i class="fas fa-video"></i>
-                    </button>
-                    <button class="control-btn chat-btn" onclick="toggleChat()">
-                        <i class="fas fa-comment"></i>
-                    </button>
-                    <button class="control-btn hangup-btn" onclick="leaveCall()">
-                        <i class="fas fa-phone"></i>
-                    </button>
-                    <button class="control-btn speaker-btn" id="speaker-btn" onclick="toggleSpeaker()">
-                        <i class="fas fa-volume-up"></i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="security-badge">
-                <i class="fas fa-shield-alt"></i> Connection secured with AES-256 encryption
-            </div>
-        </div>
+  <div class="container">
+    <!-- Login -->
+    <div id="login-section">
+      <h2>Login</h2>
+      <input type="text" id="login-username" placeholder="Username">
+      <input type="password" id="login-password" placeholder="Password">
+      <button onclick="login()">Login</button>
+      <p style="text-align:center;">Don't have an account? <a href="#" onclick="showRegister()">Register</a></p>
     </div>
 
-    <!-- Chat Container -->
-    <div id="chat-container" class="chat-container hidden">
-        <div class="chat-header">
-            <div class="chat-title">Chat</div>
-            <div class="close-chat" onclick="toggleChat()">
-                <i class="fas fa-times"></i>
-            </div>
-        </div>
-        <div class="chat-messages" id="chat-messages">
-            <div class="message incoming">
-                <div class="message-sender">System</div>
-                <div class="message-text">Welcome to the chat! Say hello to everyone.</div>
-            </div>
-        </div>
-        <div class="chat-input-container">
-            <div class="chat-input">
-                <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="handleChatKeyPress(event)">
-                <button class="send-btn" onclick="sendMessage()">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </div>
-        </div>
+    <!-- Register -->
+    <div id="register-section" class="hidden">
+      <h2>Register</h2>
+      <input type="text" id="register-username" placeholder="Username">
+      <input type="password" id="register-password" placeholder="Password">
+      <button onclick="register()">Register</button>
+      <p style="text-align:center;">Already have an account? <a href="#" onclick="showLogin()">Login</a></p>
     </div>
 
-    <div class="notification" id="notification">
-        <i class="fas fa-info-circle"></i>
-        <div id="notification-text"></div>
+    <!-- Meeting -->
+    <div id="meeting-section" class="hidden">
+      <h2>Meeting Room</h2>
+      <div class="meeting-container">
+        <div class="participants" id="participants">
+          <div class="participant-video" id="localVideo">You</div>
+        </div>
+        <div class="meeting-controls">
+          <button onclick="leaveMeeting()">Leave Meeting</button>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        // DOM elements
-        const authView = document.getElementById('auth-view');
-        const joinView = document.getElementById('join-view');
-        const activeCallView = document.getElementById('active-call-view');
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
-        const profileAvatar = document.getElementById('profile-avatar');
-        const profileName = document.getElementById('profile-name');
-        const profileEmail = document.getElementById('profile-email');
-        const participantsContainer = document.getElementById('participants-container');
-        const callTimerElement = document.getElementById('call-timer');
-        const muteBtn = document.getElementById('mute-btn');
-        const videoBtn = document.getElementById('video-btn');
-        const speakerBtn = document.getElementById('speaker-btn');
-        const groupNameElement = document.getElementById('display-group-name');
-        const debugLogsElement = document.getElementById('debug-logs');
-        const connectionStatusElement = document.getElementById('connection-status');
-        const qualityBar = document.getElementById('quality-bar');
-        const chatContainer = document.getElementById('chat-container');
-        const chatMessages = document.getElementById('chat-messages');
-        const chatInput = document.getElementById('chat-input');
-        const notification = document.getElementById('notification');
-        const notificationText = document.getElementById('notification-text');
-        
-        // Application state
-        let currentUser = null;
-        let isMuted = false;
-        let isVideoActive = false;
-        let isSpeakerOn = false;
-        let callTimer = null;
-        let callDuration = 0;
-        let localStream = null;
-        let peers = {};
-        let participants = [];
-        let roomName = '';
-        let roomPin = '';
-        let socket = null;
-        
-        // WebRTC configuration
-        const configuration = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                { 
-                    urls: 'turn:openrelay.metered.ca:80',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                { 
-                    urls: 'turn:openrelay.metered.ca:443',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                { 
-                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                }
-            ]
-        };
-        
-        // Initialize with sample data
-        document.getElementById('login-email').value = 'user@example.com';
-        document.getElementById('login-password').value = 'password';
-        document.getElementById('register-name').value = 'Test User';
-        document.getElementById('register-email').value = 'user@example.com';
-        document.getElementById('register-password').value = 'password';
-        document.getElementById('register-confirm').value = 'password';
-        
-        // Check if user is already logged in
-        function checkAuth() {
-            const userData = localStorage.getItem('currentUser');
-            if (userData) {
-                currentUser = JSON.parse(userData);
-                showJoinView();
-            }
-        }
-        
-        // Switch auth tabs
-        document.querySelectorAll('.auth-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-                
-                tab.classList.add('active');
-                const tabName = tab.getAttribute('data-tab');
-                document.getElementById(`${tabName}-form`).classList.add('active');
-            });
-        });
-        
-        // Show notification
-        function showNotification(message, type = 'info') {
-            notificationText.textContent = message;
-            notification.className = 'notification show';
-            
-            setTimeout(() => {
-                notification.classList.remove('show');
-            }, 3000);
-        }
-        
-        // Debug logging
-        function debugLog(message) {
-            const logEntry = document.createElement('div');
-            logEntry.className = 'debug-log';
-            logEntry.textContent = new Date().toLocaleTimeString() + ' - ' + message;
-            debugLogsElement.appendChild(logEntry);
-            debugLogsElement.scrollTop = debugLogsElement.scrollHeight;
-            console.log(message);
-        }
-        
-        // Update connection status
-        function updateConnectionStatus(status, type) {
-            connectionStatusElement.textContent = status;
-            connectionStatusElement.className = 'connection-status status-' + type;
-        }
-        
-        // Update connection quality indicator
-        function updateQualityIndicator(quality) {
-            qualityBar.style.width = quality + '%';
-            
-            if (quality > 70) {
-                qualityBar.style.background = '#2ecc71';
-            } else if (quality > 30) {
-                qualityBar.style.background = '#f39c12';
-            } else {
-                qualityBar.style.background = '#e74c3c';
-            }
-        }
-        
-        // Login function
-        function login() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            
-            if (!email || !password) {
-                showNotification('Please enter both email and password', 'error');
-                return;
-            }
-            
-            // In a real app, this would verify credentials with a server
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const user = users.find(u => u.email === email && u.password === password);
-            
-            if (user) {
-                currentUser = user;
-                localStorage.setItem('currentUser', JSON.stringify(user));
-                showJoinView();
-                showNotification('Login successful', 'success');
-                debugLog('Login successful');
-            } else {
-                showNotification('Invalid email or password', 'error');
-                debugLog('Invalid email or password');
-            }
-        }
-        
-        // Register function
-        function register() {
-            const name = document.getElementById('register-name').value;
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            const confirm = document.getElementById('register-confirm').value;
-            
-            if (!name || !email || !password || !confirm) {
-                showNotification('Please fill all fields', 'error');
-                return;
-            }
-            
-            if (password !== confirm) {
-                showNotification('Passwords do not match', 'error');
-                return;
-            }
-            
-            // In a real app, this would create a user on the server
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            
-            if (users.some(u => u.email === email)) {
-                showNotification('User with this email already exists', 'error');
-                return;
-            }
-            
-            const newUser = { name, email, password };
-            users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
-            
-            currentUser = newUser;
-            localStorage.setItem('currentUser', JSON.stringify(newUser));
-            showJoinView();
-            showNotification('Account created successfully', 'success');
-            debugLog('Account created successfully');
-        }
-        
-        // Logout function
-        function logout() {
-            currentUser = null;
-            localStorage.removeItem('currentUser');
-            authView.classList.remove('hidden');
-            joinView.classList.add('hidden');
-            activeCallView.classList.add('hidden');
-            
-            if (socket) {
-                socket.disconnect();
-                socket = null;
-            }
-        }
-        
-        // Show join view with user profile
-        function showJoinView() {
-            authView.classList.add('hidden');
-            joinView.classList.remove('hidden');
-            activeCallView.classList.add('hidden');
-            
-            // Set user profile
-            profileAvatar.textContent = currentUser.name.charAt(0);
-            profileName.textContent = currentUser.name;
-            profileEmail.textContent = currentUser.email;
-        }
-        
-        // Initialize socket connection
-        function initSocket() {
-            // For demonstration, we'll simulate a connection
-            // In a real app, you would connect to your server
-            debugLog('Connecting to signaling server...');
-            updateConnectionStatus('Connecting to server', 'connecting');
-            
-            // Simulate connection process
-            setTimeout(() => {
-                updateConnectionStatus('Connected to server', 'connected');
-                debugLog('Successfully connected to signaling server');
-                
-                // Simulate receiving a message
-                setTimeout(() => {
-                    debugLog('Server is ready for communication');
-                    showNotification('Connected to server', 'success');
-                }, 500);
-            }, 1500);
-            
-            // In a real app, you would initialize the socket like this:
-            // socket = io();
-            // Then set up all the socket event handlers
-        }
-        
-        // Join the call
-        async function joinCall() {
-            const roomName = document.getElementById('room-name').value;
-            const roomPin = document.getElementById('room-pin').value;
-            
-            if (!roomName || !roomPin) {
-                showNotification('Please enter both room name and PIN', 'error');
-                return;
-            }
-            
-            debugLog(`Joining room: ${roomName}`);
-            
-            try {
-                // Initialize socket connection
-                initSocket();
-                
-                debugLog('Requesting microphone access...');
-                // Get microphone access (audio only initially)
-                localStream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    },
-                    video: false
-                });
-                
-                debugLog('Microphone access granted');
-                
-                // Update group name display
-                groupNameElement.textContent = roomName;
-                
-                // Show active call view
-                joinView.classList.add('hidden');
-                activeCallView.classList.remove('hidden');
-                
-                // Add current user to participants list
-                addParticipantToList('self', currentUser.name, true);
-                
-                // Start call timer
-                startCallTimer();
-                
-                // Simulate other participants joining
-                setTimeout(() => addParticipantToList('user1', 'Alice', false), 1500);
-                setTimeout(() => addParticipantToList('user2', 'Bob', false), 3000);
-                
-                debugLog(`Joined room: ${roomName} as ${currentUser.name}`);
-                
-                // Simulate connection quality monitoring
-                setInterval(() => {
-                    const quality = Math.min(100, Math.floor(Math.random() * 100) + 10);
-                    updateQualityIndicator(quality);
-                }, 3000);
-                
-            } catch (error) {
-                showNotification('Error accessing microphone: ' + error.message, 'error');
-                debugLog('Error accessing microphone: ' + error.message);
-            }
-        }
-        
-        // Leave the call
-        function leaveCall() {
-            // Stop call timer
-            stopCallTimer();
-            
-            // Stop local stream
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-            }
-            
-            // Show join view
-            activeCallView.classList.add('hidden');
-            joinView.classList.remove('hidden');
-            
-            // Clear participants
-            participantsContainer.innerHTML = '';
-            participants = [];
-            
-            debugLog('Left the call');
-            showNotification('Call ended', 'info');
-        }
-        
-        // Toggle mute
-        function toggleMute() {
-            isMuted = !isMuted;
-            muteBtn.classList.toggle('active', isMuted);
-            
-            // Mute/unmute local audio track
-            if (localStream) {
-                localStream.getAudioTracks().forEach(track => {
-                    track.enabled = !isMuted;
-                });
-            }
-            
-            // Update UI
-            updateParticipantAudioStatus('self', isMuted ? 'muted' : 'unmuted');
-            
-            debugLog(isMuted ? 'Microphone muted' : 'Microphone unmuted');
-            showNotification(isMuted ? 'Microphone muted' : 'Microphone unmuted', 'info');
-        }
-        
-        // Toggle video
-        async function toggleVideo() {
-            if (!isVideoActive) {
-                // Enable video
-                try {
-                    const videoStream = await navigator.mediaDevices.getUserMedia({ 
-                        video: {
-                            width: { ideal: 640 },
-                            height: { ideal: 480 }
-                        }
-                    });
-                    
-                    // Add video track to local stream
-                    const videoTrack = videoStream.getVideoTracks()[0];
-                    if (localStream) {
-                        localStream.addTrack(videoTrack);
-                    }
-                    
-                    // Show video element for current user
-                    const participantEl = document.getElementById('participant-self');
-                    if (participantEl) {
-                        const videoContainer = participantEl.querySelector('.participant-video');
-                        const videoElement = document.createElement('video');
-                        videoElement.autoplay = true;
-                        videoElement.playsInline = true;
-                        videoElement.srcObject = new MediaStream([videoTrack]);
-                        videoContainer.appendChild(videoElement);
-                        videoContainer.style.display = 'block';
-                        
-                        // Hide avatar when video is active
-                        participantEl.querySelector('.participant-avatar').style.display = 'none';
-                    }
-                    
-                    isVideoActive = true;
-                    videoBtn.classList.add('active');
-                    debugLog('Video enabled');
-                    showNotification('Video enabled', 'success');
-                    
-                } catch (error) {
-                    showNotification('Error accessing camera: ' + error.message, 'error');
-                    debugLog('Error accessing camera: ' + error.message);
-                }
-            } else {
-                // Disable video
-                if (localStream) {
-                    const videoTracks = localStream.getVideoTracks();
-                    videoTracks.forEach(track => {
-                        track.stop();
-                        localStream.removeTrack(track);
-                    });
-                    
-                    // Hide video element for current user
-                    const participantEl = document.getElementById('participant-self');
-                    if (participantEl) {
-                        const videoContainer = participantEl.querySelector('.participant-video');
-                        videoContainer.innerHTML = '';
-                        videoContainer.style.display = 'none';
-                        
-                        // Show avatar when video is disabled
-                        participantEl.querySelector('.participant-avatar').style.display = 'flex';
-                    }
-                    
-                    isVideoActive = false;
-                    videoBtn.classList.remove('active');
-                    debugLog('Video disabled');
-                    showNotification('Video disabled', 'info');
-                }
-            }
-        }
-        
-        // Toggle speaker
-        function toggleSpeaker() {
-            isSpeakerOn = !isSpeakerOn;
-            speakerBtn.classList.toggle('active', isSpeakerOn);
-            debugLog(isSpeakerOn ? 'Speaker enabled' : 'Speaker disabled');
-            showNotification(isSpeakerOn ? 'Speaker enabled' : 'Speaker disabled', 'info');
-        }
-        
-        // Toggle chat
-        function toggleChat() {
-            chatContainer.classList.toggle('hidden');
-        }
-        
-        // Handle chat input key press
-        function handleChatKeyPress(event) {
-            if (event.key === 'Enter') {
-                sendMessage();
-            }
-        }
-        
-        // Send chat message
-        function sendMessage() {
-            const message = chatInput.value.trim();
-            if (message === '') return;
-            
-            // Add message to chat
-            addMessageToChat(currentUser.name, message, 'outgoing');
-            
-            // In a real app, you would send the message via socket
-            // socket.emit('send-chat-message', { roomName, message });
-            
-            // Clear input
-            chatInput.value = '';
-        }
-        
-        // Add message to chat
-        function addMessageToChat(sender, text, type) {
-            const messageEl = document.createElement('div');
-            messageEl.className = `message ${type}`;
-            
-            messageEl.innerHTML = `
-                <div class="message-sender">${sender}</div>
-                <div class="message-text">${text}</div>
-            `;
-            
-            chatMessages.appendChild(messageEl);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-        
-        // Add participant to UI list
-        function addParticipantToList(userId, userName, isSelf = false) {
-            const participantEl = document.createElement('div');
-            participantEl.className = 'participant';
-            participantEl.id = `participant-${userId}`;
-            
-            participantEl.innerHTML = `
-                <div class="participant-video"></div>
-                <div class="participant-avatar">${userName.charAt(0)}</div>
-                <div class="participant-name">${isSelf ? 'You' : userName}</div>
-                <div class="participant-status">Connected</div>
-            `;
-            
-            participantsContainer.appendChild(participantEl);
-            participants.push({ userId, userName });
-            
-            // Simulate some users being muted
-            if (userId === 'user2') {
-                setTimeout(() => updateParticipantAudioStatus(userId, 'muted'), 2000);
-            }
-            
-            // Simulate receiving a chat message when a user joins
-            if (!isSelf) {
-                setTimeout(() => {
-                    addMessageToChat(userName, 'Joined the call', 'incoming');
-                }, 1000);
-            }
-        }
-        
-        // Update participant audio status
-        function updateParticipantAudioStatus(userId, audioStatus) {
-            const participantEl = document.getElementById(`participant-${userId}`);
-            if (!participantEl) return;
-            
-            // Remove existing muted indicator if present
-            const existingMuted = participantEl.querySelector('.participant-muted');
-            if (existingMuted) {
-                existingMuted.remove();
-            }
-            
-            // Add muted indicator if muted
-            if (audioStatus === 'muted') {
-                const mutedEl = document.createElement('div');
-                mutedEl.className = 'participant-muted';
-                mutedEl.innerHTML = '<i class="fas fa-microphone-slash"></i>';
-                participantEl.appendChild(mutedEl);
-            }
-        }
-        
-        // Start call timer
-        function startCallTimer() {
-            callDuration = 0;
-            callTimer = setInterval(() => {
-                callDuration++;
-                const minutes = Math.floor(callDuration / 60).toString().padStart(2, '0');
-                const seconds = (callDuration % 60).toString().padStart(2, '0');
-                callTimerElement.textContent = `${minutes}:${seconds}`;
-            }, 1000);
-        }
-        
-        // Stop call timer
-        function stopCallTimer() {
-            if (callTimer) {
-                clearInterval(callTimer);
-                callTimer = null;
-            }
-        }
-        
-        // Initialize the app
-        function init() {
-            checkAuth();
-            
-            // Simulate connection quality changes
-            setInterval(() => {
-                const quality = Math.min(100, Math.floor(Math.random() * 100) + 10);
-                updateQualityIndicator(quality);
-            }, 3000);
-        }
-        
-        // Start the app
-        init();
-    </script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    let currentUser = null;
+    let socket = null;
+    let localStream = null;
+
+    function showRegister() {
+      document.getElementById('login-section').classList.add('hidden');
+      document.getElementById('register-section').classList.remove('hidden');
+    }
+    function showLogin() {
+      document.getElementById('register-section').classList.add('hidden');
+      document.getElementById('login-section').classList.remove('hidden');
+    }
+
+    function register() {
+      const username = document.getElementById('register-username').value;
+      const password = document.getElementById('register-password').value;
+      if (!username || !password) return alert("Fill all fields");
+      let users = JSON.parse(localStorage.getItem('users') || '[]');
+      if (users.find(u => u.username === username)) return alert("User exists");
+      users.push({username, password});
+      localStorage.setItem('users', JSON.stringify(users));
+      alert("Registered! Please login.");
+      showLogin();
+    }
+
+    function login() {
+      const username = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
+      let users = JSON.parse(localStorage.getItem('users') || '[]');
+      if (!users.find(u => u.username === username && u.password === password)) return alert("Invalid login");
+      currentUser = username;
+      startMeeting();
+    }
+
+    async function startMeeting() {
+      document.getElementById('login-section').classList.add('hidden');
+      document.getElementById('register-section').classList.add('hidden');
+      document.getElementById('meeting-section').classList.remove('hidden');
+
+      // init socket
+      socket = io();
+
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const localVideoDiv = document.getElementById('localVideo');
+        localVideoDiv.innerHTML = "";
+        const video = document.createElement("video");
+        video.srcObject = localStream;
+        video.autoplay = true;
+        video.muted = true;
+        video.style.width = "100%";
+        video.style.height = "100%";
+        video.style.borderRadius = "10px";
+        localVideoDiv.appendChild(video);
+      } catch (err) {
+        alert("Could not access camera/mic: " + err);
+      }
+
+      // Dummy participant simulation
+      addParticipant("User A");
+      addParticipant("User B");
+    }
+
+    function addParticipant(name) {
+      const container = document.getElementById('participants');
+      const div = document.createElement('div');
+      div.className = "participant-video";
+      div.textContent = name;
+      container.appendChild(div);
+    }
+
+    function leaveMeeting() {
+      if (socket) socket.disconnect();
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+      }
+      currentUser = null;
+      document.getElementById('meeting-section').classList.add('hidden');
+      document.getElementById('login-section').classList.remove('hidden');
+      document.getElementById('participants').innerHTML = `<div class="participant-video" id="localVideo">You</div>`;
+    }
+  </script>
 </body>
 </html>
