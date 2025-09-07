@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VideoConnect - Professional Video Communication</title>
+    <title>VoiceConnect - Communication App</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -113,12 +113,14 @@
             border-radius: 8px;
             margin-bottom: 10px;
             overflow: hidden;
+            display: none;
         }
         
         .participant-video video {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            border-radius: 8px;
         }
         
         .participant-avatar {
@@ -161,19 +163,19 @@
         .call-controls {
             display: flex;
             justify-content: center;
-            gap: 30px;
+            gap: 20px;
             margin-top: auto;
             padding: 20px 0;
         }
         
         .control-btn {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 18px;
             cursor: pointer;
             border: none;
             transition: all 0.3s ease;
@@ -184,7 +186,7 @@
             color: white;
         }
         
-        .mute-btn, .video-btn, .speaker-btn, .screen-share-btn {
+        .mute-btn, .video-btn, .speaker-btn, .chat-btn {
             background: rgba(255, 255, 255, 0.2);
             color: white;
         }
@@ -301,138 +303,97 @@
             color: #f1c40f;
         }
         
-        .troubleshoot-btn {
-            background: #3498db;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            margin-top: 15px;
-            cursor: pointer;
-        }
-        
         .hidden {
             display: none;
         }
         
-        .fix-connection-btn {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            margin-top: 10px;
-            cursor: pointer;
-        }
-        
-        .connection-quality {
-            height: 5px;
-            background: #2a3942;
-            border-radius: 3px;
-            margin-top: 10px;
-            overflow: hidden;
-        }
-        
-        .quality-bar {
-            height: 100%;
-            width: 0%;
-            background: #2ecc71;
-            transition: width 0.5s ease;
-        }
-        
-        .auth-container {
-            padding: 30px 20px;
-        }
-        
-        .auth-tabs {
+        .chat-container {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            width: 300px;
+            height: 400px;
+            background: var(--light-dark);
+            border-radius: 12px;
             display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-direction: column;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 100;
         }
         
-        .auth-tab {
-            flex: 1;
-            text-align: center;
+        .chat-header {
             padding: 15px;
-            cursor: pointer;
-            opacity: 0.7;
-        }
-        
-        .auth-tab.active {
-            opacity: 1;
-            border-bottom: 2px solid #128c7e;
-        }
-        
-        .auth-form {
-            display: none;
-        }
-        
-        .auth-form.active {
-            display: block;
-        }
-        
-        .profile-header {
+            background: var(--primary-dark);
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: #202c33;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        .profile-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: #128c7e;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            color: white;
-        }
-        
-        .profile-info {
-            flex: 1;
-        }
-        
-        .profile-name {
+        .chat-title {
             font-weight: 600;
-            margin-bottom: 3px;
         }
         
-        .profile-email {
-            font-size: 13px;
-            color: rgba(255, 255, 255, 0.7);
-        }
-        
-        .logout-btn {
-            background: none;
-            border: none;
-            color: #128c7e;
+        .close-chat {
             cursor: pointer;
-            font-size: 14px;
         }
         
-        .privacy-notice {
-            background: rgba(18, 140, 126, 0.2);
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .message {
             padding: 10px;
             border-radius: 8px;
-            margin: 15px 0;
-            font-size: 13px;
-            text-align: center;
+            max-width: 80%;
+            word-wrap: break-word;
         }
         
-        .security-badge {
+        .message.incoming {
+            background: var(--dark);
+            align-self: flex-start;
+        }
+        
+        .message.outgoing {
+            background: var(--primary);
+            align-self: flex-end;
+        }
+        
+        .message-sender {
+            font-weight: 600;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+        
+        .chat-input-container {
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .chat-input {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 10px;
-            font-size: 13px;
-            color: #4ecdc4;
+            gap: 10px;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            padding: 10px 15px;
+            font-size: 14px;
+        }
+        
+        .send-btn {
+            background: var(--primary);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 0 15px;
+            cursor: pointer;
         }
         
         .notification {
@@ -469,95 +430,37 @@
             }
             
             .call-controls {
-                gap: 20px;
+                gap: 15px;
             }
             
             .control-btn {
-                width: 55px;
-                height: 55px;
+                width: 45px;
+                height: 45px;
+                font-size: 16px;
+            }
+            
+            .chat-container {
+                width: 90%;
+                right: 5%;
+                height: 350px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Authentication View -->
-        <div id="auth-view" class="auth-container">
-            <h2 class="join-title">VideoConnect</h2>
-            
-            <div class="auth-tabs">
-                <div class="auth-tab active" data-tab="login">Login</div>
-                <div class="auth-tab" data-tab="register">Register</div>
-            </div>
-            
-            <!-- Login Form -->
-            <div id="login-form" class="auth-form active">
-                <div class="form-group">
-                    <label for="login-email">Email</label>
-                    <input type="email" id="login-email" placeholder="Enter your email">
-                </div>
-                <div class="form-group">
-                    <label for="login-password">Password</label>
-                    <input type="password" id="login-password" placeholder="Enter your password">
-                </div>
-                <button class="join-btn" onclick="login()">Login</button>
-                
-                <div class="privacy-notice">
-                    <i class="fas fa-shield-alt"></i> Your privacy is protected with end-to-end encryption
-                </div>
-            </div>
-            
-            <!-- Registration Form -->
-            <div id="register-form" class="auth-form">
-                <div class="form-group">
-                    <label for="register-name">Username</label>
-                    <input type="text" id="register-name" placeholder="Choose a username">
-                </div>
-                <div class="form-group">
-                    <label for="register-email">Email</label>
-                    <input type="email" id="register-email" placeholder="Enter your email">
-                </div>
-                <div class="form-group">
-                    <label for="register-password">Password</label>
-                    <input type="password" id="register-password" placeholder="Create a password">
-                </div>
-                <div class="form-group">
-                    <label for="register-confirm">Confirm Password</label>
-                    <input type="password" id="register-confirm" placeholder="Confirm your password">
-                </div>
-                <button class="join-btn" onclick="register()">Create Account</button>
-                
-                <div class="privacy-notice">
-                    <i class="fas fa-lock"></i> We never share your personal information with third parties
-                </div>
-            </div>
-        </div>
-
         <!-- Join Call View -->
-        <div id="join-view" class="join-call-container hidden">
-            <div class="profile-header">
-                <div class="profile-avatar" id="profile-avatar">U</div>
-                <div class="profile-info">
-                    <div class="profile-name" id="profile-name">User</div>
-                    <div class="profile-email" id="profile-email">user@example.com</div>
-                </div>
-                <button class="logout-btn" onclick="logout()">Logout</button>
+        <div id="join-view" class="join-call-container">
+            <h2 class="join-title">VoiceConnect</h2>
+            <div class="form-group">
+                <label for="user-name">Your Name</label>
+                <input type="text" id="user-name" placeholder="Enter your name" value="You">
             </div>
-            
-            <h2 class="join-title">Join Video Call</h2>
             <div class="form-group">
                 <label for="room-name">Room Name</label>
-                <input type="text" id="room-name" placeholder="Enter room name">
-            </div>
-            <div class="form-group">
-                <label for="room-pin">Room PIN</label>
-                <input type="password" id="room-pin" placeholder="Enter room PIN">
+                <input type="text" id="room-name" placeholder="Enter room name" value="General">
             </div>
             <button class="join-btn" onclick="joinCall()">Join Call</button>
-            
-            <div class="security-badge">
-                <i class="fas fa-lock"></i> End-to-end encrypted
-            </div>
             
             <div class="debug-panel">
                 <div class="debug-title">Connection Info:</div>
@@ -578,8 +481,8 @@
                     <i class="fas fa-arrow-left"></i>
                 </div>
                 <div class="header-info">
-                    <div class="group-name" id="display-group-name">Video Call</div>
-                    <div class="group-status">End-to-end encrypted • <span id="encryption-status">Active</span></div>
+                    <div class="group-name" id="display-group-name">General</div>
+                    <div class="group-status">Connected • <span id="encryption-status">Encrypted</span></div>
                 </div>
                 <div class="header-btn" onclick="toggleChat()">
                     <i class="fas fa-comment"></i>
@@ -600,8 +503,8 @@
                     <button class="control-btn video-btn" id="video-btn" onclick="toggleVideo()">
                         <i class="fas fa-video"></i>
                     </button>
-                    <button class="control-btn screen-share-btn" id="screen-share-btn" onclick="toggleScreenShare()">
-                        <i class="fas fa-desktop"></i>
+                    <button class="control-btn chat-btn" onclick="toggleChat()">
+                        <i class="fas fa-comment"></i>
                     </button>
                     <button class="control-btn hangup-btn" onclick="leaveCall()">
                         <i class="fas fa-phone"></i>
@@ -611,9 +514,29 @@
                     </button>
                 </div>
             </div>
-            
-            <div class="security-badge">
-                <i class="fas fa-shield-alt"></i> Connection secured with AES-256 encryption
+        </div>
+    </div>
+
+    <!-- Chat Container -->
+    <div id="chat-container" class="chat-container hidden">
+        <div class="chat-header">
+            <div class="chat-title">Chat</div>
+            <div class="close-chat" onclick="toggleChat()">
+                <i class="fas fa-times"></i>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+            <div class="message incoming">
+                <div class="message-sender">System</div>
+                <div class="message-text">Welcome to the chat! Say hello to everyone.</div>
+            </div>
+        </div>
+        <div class="chat-input-container">
+            <div class="chat-input">
+                <input type="text" id="chat-input" placeholder="Type a message...">
+                <button class="send-btn" onclick="sendMessage()">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -626,95 +549,39 @@
     <script src="/socket.io/socket.io.js"></script>
     <script>
         // DOM elements
-        const authView = document.getElementById('auth-view');
         const joinView = document.getElementById('join-view');
         const activeCallView = document.getElementById('active-call-view');
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
-        const profileAvatar = document.getElementById('profile-avatar');
-        const profileName = document.getElementById('profile-name');
-        const profileEmail = document.getElementById('profile-email');
         const participantsContainer = document.getElementById('participants-container');
         const callTimerElement = document.getElementById('call-timer');
         const muteBtn = document.getElementById('mute-btn');
         const videoBtn = document.getElementById('video-btn');
-        const screenShareBtn = document.getElementById('screen-share-btn');
         const speakerBtn = document.getElementById('speaker-btn');
         const groupNameElement = document.getElementById('display-group-name');
         const debugLogsElement = document.getElementById('debug-logs');
         const connectionStatusElement = document.getElementById('connection-status');
         const qualityBar = document.getElementById('quality-bar');
+        const chatContainer = document.getElementById('chat-container');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
         const notification = document.getElementById('notification');
         const notificationText = document.getElementById('notification-text');
         
         // Application state
         let currentUser = null;
         let isMuted = false;
-        let isVideoActive = true;
-        let isScreenSharing = false;
+        let isVideoActive = false;
         let isSpeakerOn = false;
         let callTimer = null;
         let callDuration = 0;
         let localStream = null;
-        let screenStream = null;
         let peers = {};
         let participants = [];
         let roomName = '';
-        let roomPin = '';
         let socket = null;
         
-        // WebRTC configuration
-        const configuration = {
-            iceServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                { 
-                    urls: 'turn:openrelay.metered.ca:80',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                { 
-                    urls: 'turn:openrelay.metered.ca:443',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                { 
-                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                }
-            ]
-        };
-        
         // Initialize with sample data
-        document.getElementById('login-email').value = 'user@example.com';
-        document.getElementById('login-password').value = 'password';
-        document.getElementById('register-name').value = 'Test User';
-        document.getElementById('register-email').value = 'user@example.com';
-        document.getElementById('register-password').value = 'password';
-        document.getElementById('register-confirm').value = 'password';
-        
-        // Check if user is already logged in
-        function checkAuth() {
-            const userData = localStorage.getItem('currentUser');
-            if (userData) {
-                currentUser = JSON.parse(userData);
-                showJoinView();
-            }
-        }
-        
-        // Switch auth tabs
-        document.querySelectorAll('.auth-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
-                
-                tab.classList.add('active');
-                const tabName = tab.getAttribute('data-tab');
-                document.getElementById(`${tabName}-form`).classList.add('active');
-            });
-        });
+        document.getElementById('user-name').value = 'You';
+        document.getElementById('room-name').value = 'General';
         
         // Show notification
         function showNotification(message, type = 'info') {
@@ -755,207 +622,59 @@
             }
         }
         
-        // Login function
-        function login() {
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            
-            if (!email || !password) {
-                showNotification('Please enter both email and password', 'error');
-                return;
-            }
-            
-            // In a real app, this would verify credentials with a server
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const user = users.find(u => u.email === email && u.password === password);
-            
-            if (user) {
-                currentUser = user;
-                localStorage.setItem('currentUser', JSON.stringify(user));
-                showJoinView();
-                showNotification('Login successful', 'success');
-                debugLog('Login successful');
-            } else {
-                showNotification('Invalid email or password', 'error');
-                debugLog('Invalid email or password');
-            }
-        }
-        
-        // Register function
-        function register() {
-            const name = document.getElementById('register-name').value;
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            const confirm = document.getElementById('register-confirm').value;
-            
-            if (!name || !email || !password || !confirm) {
-                showNotification('Please fill all fields', 'error');
-                return;
-            }
-            
-            if (password !== confirm) {
-                showNotification('Passwords do not match', 'error');
-                return;
-            }
-            
-            // In a real app, this would create a user on the server
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            
-            if (users.some(u => u.email === email)) {
-                showNotification('User with this email already exists', 'error');
-                return;
-            }
-            
-            const newUser = { name, email, password };
-            users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
-            
-            currentUser = newUser;
-            localStorage.setItem('currentUser', JSON.stringify(newUser));
-            showJoinView();
-            showNotification('Account created successfully', 'success');
-            debugLog('Account created successfully');
-        }
-        
-        // Logout function
-        function logout() {
-            currentUser = null;
-            localStorage.removeItem('currentUser');
-            authView.classList.remove('hidden');
-            joinView.classList.add('hidden');
-            activeCallView.classList.add('hidden');
-            
-            if (socket) {
-                socket.disconnect();
-                socket = null;
-            }
-        }
-        
-        // Show join view with user profile
-        function showJoinView() {
-            authView.classList.add('hidden');
-            joinView.classList.remove('hidden');
-            activeCallView.classList.add('hidden');
-            
-            // Set user profile
-            profileAvatar.textContent = currentUser.name.charAt(0);
-            profileName.textContent = currentUser.name;
-            profileEmail.textContent = currentUser.email;
-        }
-        
         // Initialize socket connection
         function initSocket() {
-            socket = io();
+            // For demonstration, we'll simulate a connection
+            // In a real app, you would connect to your server
+            debugLog('Simulating connection to server...');
+            updateConnectionStatus('Connecting to server', 'connecting');
             
-            socket.on('connect', () => {
-                debugLog('Connected to signaling server with ID: ' + socket.id);
-                updateConnectionStatus('Connected to signaling server', 'connected');
-            });
-            
-            socket.on('disconnect', () => {
-                debugLog('Disconnected from signaling server');
-                updateConnectionStatus('Disconnected from signaling server', 'disconnected');
-            });
-            
-            socket.on('user-joined', (data) => {
-                debugLog(`${data.userName} joined the call`);
-                addParticipantToList(data.userId, data.userName, false);
-                createPeerConnection(data.userId, data.userName, false);
-            });
-            
-            socket.on('user-left', (data) => {
-                debugLog(`${data.userName} left the call`);
-                removeParticipantFromList(data.userId);
+            setTimeout(() => {
+                updateConnectionStatus('Connected to server', 'connected');
+                debugLog('Successfully connected to signaling server');
                 
-                if (peers[data.userId]) {
-                    peers[data.userId].close();
-                    delete peers[data.userId];
-                }
-            });
+                // Simulate receiving a message
+                setTimeout(() => {
+                    debugLog('Server is ready for communication');
+                    showNotification('Connected to server', 'success');
+                }, 500);
+            }, 1500);
             
-            socket.on('offer', async (data) => {
-                debugLog(`Received offer from ${data.from}`);
-                
-                if (!peers[data.from]) {
-                    await createPeerConnection(data.from, 'Remote User', false);
-                }
-                
-                try {
-                    await peers[data.from].setRemoteDescription(data.offer);
-                    const answer = await peers[data.from].createAnswer();
-                    await peers[data.from].setLocalDescription(answer);
-                    socket.emit('answer', { to: data.from, answer });
-                    debugLog(`Sent answer to ${data.from}`);
-                } catch (error) {
-                    debugLog('Error handling offer: ' + error.message);
-                }
-            });
-            
-            socket.on('answer', async (data) => {
-                debugLog(`Received answer from ${data.from}`);
-                
-                if (peers[data.from]) {
-                    try {
-                        await peers[data.from].setRemoteDescription(data.answer);
-                    } catch (error) {
-                        debugLog('Error setting remote description: ' + error.message);
-                    }
-                }
-            });
-            
-            socket.on('ice-candidate', async (data) => {
-                debugLog(`Received ICE candidate from ${data.from}`);
-                if (peers[data.from]) {
-                    try {
-                        await peers[data.from].addIceCandidate(data.candidate);
-                    } catch (error) {
-                        debugLog('Error adding ICE candidate: ' + error.message);
-                    }
-                }
-            });
-            
-            socket.on('user-video-changed', (data) => {
-                updateParticipantVideoStatus(data.userId, data.videoStatus);
-            });
-            
-            socket.on('user-audio-changed', (data) => {
-                updateParticipantAudioStatus(data.userId, data.audioStatus);
-            });
+            // In a real app, you would initialize the socket like this:
+            // socket = io();
+            // Then set up all the socket event handlers
         }
         
         // Join the call
         async function joinCall() {
+            const userName = document.getElementById('user-name').value;
             roomName = document.getElementById('room-name').value;
-            roomPin = document.getElementById('room-pin').value;
             
-            if (!roomName || !roomPin) {
-                showNotification('Please enter both room name and PIN', 'error');
+            if (!userName || !roomName) {
+                showNotification('Please enter your name and room name', 'error');
                 return;
             }
+            
+            currentUser = userName;
             
             debugLog(`Joining room: ${roomName}`);
             
             try {
                 // Initialize socket connection
-                if (!socket) {
-                    initSocket();
-                }
+                initSocket();
                 
-                debugLog('Requesting camera and microphone access...');
-                // Get camera and microphone access
+                debugLog('Requesting microphone access...');
+                // Get microphone access (audio only initially)
                 localStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: {
-                        width: { ideal: 640 },
-                        height: { ideal: 480 }
-                    },
                     audio: {
                         echoCancellation: true,
                         noiseSuppression: true,
                         autoGainControl: true
-                    }
+                    },
+                    video: false
                 });
                 
-                debugLog('Camera and microphone access granted');
+                debugLog('Microphone access granted');
                 
                 // Update group name display
                 groupNameElement.textContent = roomName;
@@ -965,14 +684,16 @@
                 activeCallView.classList.remove('hidden');
                 
                 // Add current user to participants list
-                addParticipantToList('self', currentUser.name, true);
+                addParticipantToList('self', currentUser, true);
                 
                 // Start call timer
                 startCallTimer();
                 
-                // Join the room
-                socket.emit('join-room', { roomName, userName: currentUser.name, roomPin });
-                debugLog(`Joined room: ${roomName} as ${currentUser.name}`);
+                // Simulate other participants joining
+                setTimeout(() => addParticipantToList('user1', 'Alice', false), 1500);
+                setTimeout(() => addParticipantToList('user2', 'Bob', false), 3000);
+                
+                debugLog(`Joined room: ${roomName} as ${currentUser}`);
                 
                 // Simulate connection quality monitoring
                 setInterval(() => {
@@ -981,8 +702,8 @@
                 }, 3000);
                 
             } catch (error) {
-                showNotification('Error accessing camera/microphone: ' + error.message, 'error');
-                debugLog('Error accessing camera/microphone: ' + error.message);
+                showNotification('Error accessing microphone: ' + error.message, 'error');
+                debugLog('Error accessing microphone: ' + error.message);
             }
         }
         
@@ -991,24 +712,9 @@
             // Stop call timer
             stopCallTimer();
             
-            // Close all peer connections
-            for (const userId in peers) {
-                peers[userId].close();
-            }
-            peers = {};
-            
-            // Stop local streams
+            // Stop local stream
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
-            }
-            
-            if (screenStream) {
-                screenStream.getTracks().forEach(track => track.stop());
-            }
-            
-            // Leave the room
-            if (socket) {
-                socket.emit('leave-room', { roomName, userName: currentUser.name });
             }
             
             // Show join view
@@ -1020,6 +726,7 @@
             participants = [];
             
             debugLog('Left the call');
+            showNotification('Call ended', 'info');
         }
         
         // Toggle mute
@@ -1034,104 +741,80 @@
                 });
             }
             
-            // Notify other users
-            if (socket) {
-                socket.emit('audio-change', { 
-                    roomName, 
-                    userId: socket.id, 
-                    userName: currentUser.name, 
-                    audioStatus: isMuted ? 'muted' : 'unmuted' 
-                });
-            }
-            
             // Update UI
             updateParticipantAudioStatus('self', isMuted ? 'muted' : 'unmuted');
             
             debugLog(isMuted ? 'Microphone muted' : 'Microphone unmuted');
+            showNotification(isMuted ? 'Microphone muted' : 'Microphone unmuted', 'info');
         }
         
         // Toggle video
-        function toggleVideo() {
-            isVideoActive = !isVideoActive;
-            videoBtn.classList.toggle('active', !isVideoActive);
-            
-            // Enable/disable local video track
-            if (localStream) {
-                localStream.getVideoTracks().forEach(track => {
-                    track.enabled = isVideoActive;
-                });
-            }
-            
-            // Notify other users
-            if (socket) {
-                socket.emit('video-change', { 
-                    roomName, 
-                    userId: socket.id, 
-                    userName: currentUser.name, 
-                    videoStatus: isVideoActive ? 'active' : 'inactive' 
-                });
-            }
-            
-            // Update UI
-            updateParticipantVideoStatus('self', isVideoActive ? 'active' : 'inactive');
-            
-            debugLog(isVideoActive ? 'Video enabled' : 'Video disabled');
-        }
-        
-        // Toggle screen share
-        async function toggleScreenShare() {
-            try {
-                if (!isScreenSharing) {
-                    // Get screen stream
-                    screenStream = await navigator.mediaDevices.getDisplayMedia({
-                        video: true,
-                        audio: true
+        async function toggleVideo() {
+            if (!isVideoActive) {
+                // Enable video
+                try {
+                    const videoStream = await navigator.mediaDevices.getUserMedia({ 
+                        video: {
+                            width: { ideal: 640 },
+                            height: { ideal: 480 }
+                        }
                     });
                     
-                    // Replace video track in all peer connections
-                    for (const userId in peers) {
-                        const videoTrack = screenStream.getVideoTracks()[0];
-                        const sender = peers[userId].getSenders().find(s => s.track && s.track.kind === 'video');
-                        if (sender) {
-                            sender.replaceTrack(videoTrack);
-                        }
+                    // Add video track to local stream
+                    const videoTrack = videoStream.getVideoTracks()[0];
+                    if (localStream) {
+                        localStream.addTrack(videoTrack);
                     }
                     
-                    isScreenSharing = true;
-                    screenShareBtn.classList.add('active');
-                    debugLog('Screen sharing started');
-                    
-                    // Handle when user stops screen share
-                    screenStream.getVideoTracks()[0].onended = () => {
-                        toggleScreenShare();
-                    };
-                } else {
-                    // Switch back to camera
-                    const cameraStream = await navigator.mediaDevices.getUserMedia({ 
-                        video: true,
-                        audio: true
-                    });
-                    
-                    // Replace video track in all peer connections
-                    for (const userId in peers) {
-                        const videoTrack = cameraStream.getVideoTracks()[0];
-                        const sender = peers[userId].getSenders().find(s => s.track && s.track.kind === 'video');
-                        if (sender) {
-                            sender.replaceTrack(videoTrack);
-                        }
+                    // Show video element for current user
+                    const participantEl = document.getElementById('participant-self');
+                    if (participantEl) {
+                        const videoContainer = participantEl.querySelector('.participant-video');
+                        const videoElement = document.createElement('video');
+                        videoElement.autoplay = true;
+                        videoElement.playsInline = true;
+                        videoElement.srcObject = new MediaStream([videoTrack]);
+                        videoContainer.appendChild(videoElement);
+                        videoContainer.style.display = 'block';
+                        
+                        // Hide avatar when video is active
+                        participantEl.querySelector('.participant-avatar').style.display = 'none';
                     }
                     
-                    // Stop screen stream
-                    screenStream.getTracks().forEach(track => track.stop());
-                    screenStream = null;
+                    isVideoActive = true;
+                    videoBtn.classList.add('active');
+                    debugLog('Video enabled');
+                    showNotification('Video enabled', 'success');
                     
-                    isScreenSharing = false;
-                    screenShareBtn.classList.remove('active');
-                    debugLog('Screen sharing stopped');
+                } catch (error) {
+                    showNotification('Error accessing camera: ' + error.message, 'error');
+                    debugLog('Error accessing camera: ' + error.message);
                 }
-            } catch (error) {
-                debugLog('Error toggling screen share: ' + error.message);
-                showNotification('Error sharing screen: ' + error.message, 'error');
+            } else {
+                // Disable video
+                if (localStream) {
+                    const videoTracks = localStream.getVideoTracks();
+                    videoTracks.forEach(track => {
+                        track.stop();
+                        localStream.removeTrack(track);
+                    });
+                    
+                    // Hide video element for current user
+                    const participantEl = document.getElementById('participant-self');
+                    if (participantEl) {
+                        const videoContainer = participantEl.querySelector('.participant-video');
+                        videoContainer.innerHTML = '';
+                        videoContainer.style.display = 'none';
+                        
+                        // Show avatar when video is disabled
+                        participantEl.querySelector('.participant-avatar').style.display = 'flex';
+                    }
+                    
+                    isVideoActive = false;
+                    videoBtn.classList.remove('active');
+                    debugLog('Video disabled');
+                    showNotification('Video disabled', 'info');
+                }
             }
         }
         
@@ -1140,99 +823,41 @@
             isSpeakerOn = !isSpeakerOn;
             speakerBtn.classList.toggle('active', isSpeakerOn);
             debugLog(isSpeakerOn ? 'Speaker enabled' : 'Speaker disabled');
+            showNotification(isSpeakerOn ? 'Speaker enabled' : 'Speaker disabled', 'info');
         }
         
-        // Create a peer connection
-        async function createPeerConnection(userId, userName, isInitiator) {
-            debugLog(`Creating peer connection with ${userName} (${userId}), initiator: ${isInitiator}`);
+        // Toggle chat
+        function toggleChat() {
+            chatContainer.classList.toggle('hidden');
+        }
+        
+        // Send chat message
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (message === '') return;
             
-            const peer = new RTCPeerConnection(configuration);
+            // Add message to chat
+            addMessageToChat(currentUser, message, 'outgoing');
             
-            // Add event listeners for debugging
-            peer.addEventListener('iceconnectionstatechange', () => {
-                debugLog(`ICE connection state for ${userName}: ${peer.iceConnectionState}`);
-                
-                if (peer.iceConnectionState === 'connected') {
-                    debugLog('Successfully connected to peer!');
-                    updateQualityIndicator(100);
-                } else if (peer.iceConnectionState === 'failed') {
-                    debugLog('ICE connection failed');
-                    updateQualityIndicator(20);
-                }
-            });
+            // In a real app, you would send the message via socket
+            // socket.emit('send-chat-message', { roomName, message });
             
-            peer.addEventListener('connectionstatechange', () => {
-                debugLog(`Connection state for ${userName}: ${peer.connectionState}`);
-                
-                if (peer.connectionState === 'connected') {
-                    debugLog('WebRTC connection established successfully!');
-                } else if (peer.connectionState === 'failed') {
-                    debugLog('WebRTC connection failed');
-                }
-            });
+            // Clear input
+            chatInput.value = '';
+        }
+        
+        // Add message to chat
+        function addMessageToChat(sender, text, type) {
+            const messageEl = document.createElement('div');
+            messageEl.className = `message ${type}`;
             
-            peer.addEventListener('signalingstatechange', () => {
-                debugLog(`Signaling state for ${userName}: ${peer.signalingState}`);
-            });
+            messageEl.innerHTML = `
+                <div class="message-sender">${sender}</div>
+                <div class="message-text">${text}</div>
+            `;
             
-            peer.addEventListener('icecandidate', (event) => {
-                if (event.candidate) {
-                    debugLog(`Sending ICE candidate to ${userId}`);
-                    socket.emit('ice-candidate', {
-                        to: userId,
-                        candidate: event.candidate
-                    });
-                } else {
-                    debugLog('ICE gathering complete');
-                }
-            });
-            
-            // Add local stream to peer connection
-            if (localStream) {
-                localStream.getTracks().forEach(track => {
-                    peer.addTrack(track, localStream);
-                });
-            }
-            
-            // Handle remote stream
-            peer.ontrack = (event) => {
-                debugLog(`Received remote stream from ${userName}`);
-                const remoteStream = event.streams[0];
-                
-                // Update participant video element
-                const participantEl = document.getElementById(`participant-${userId}`);
-                if (participantEl) {
-                    const videoEl = participantEl.querySelector('video');
-                    if (videoEl) {
-                        videoEl.srcObject = remoteStream;
-                    } else {
-                        const videoContainer = participantEl.querySelector('.participant-video');
-                        if (videoContainer) {
-                            const video = document.createElement('video');
-                            video.autoplay = true;
-                            video.playsInline = true;
-                            video.srcObject = remoteStream;
-                            videoContainer.appendChild(video);
-                        }
-                    }
-                }
-            };
-            
-            peers[userId] = peer;
-            
-            // Create offer if initiator
-            if (isInitiator) {
-                try {
-                    const offer = await peer.createOffer();
-                    await peer.setLocalDescription(offer);
-                    socket.emit('offer', { to: userId, offer });
-                    debugLog(`Sent offer to ${userId}`);
-                } catch (error) {
-                    debugLog('Error creating offer: ' + error.message);
-                }
-            }
-            
-            return peer;
+            chatMessages.appendChild(messageEl);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
         }
         
         // Add participant to UI list
@@ -1242,34 +867,26 @@
             participantEl.id = `participant-${userId}`;
             
             participantEl.innerHTML = `
-                <div class="participant-video">
-                    ${isSelf ? '<video id="local-video" autoplay playsinline></video>' : ''}
-                </div>
+                <div class="participant-video"></div>
                 <div class="participant-avatar">${userName.charAt(0)}</div>
                 <div class="participant-name">${isSelf ? 'You' : userName}</div>
-                <div class="participant-status">Connecting...</div>
+                <div class="participant-status">Connected</div>
             `;
             
             participantsContainer.appendChild(participantEl);
             participants.push({ userId, userName });
             
-            // Set local video stream if it's the current user
-            if (isSelf && localStream) {
-                const localVideo = document.getElementById('local-video');
-                if (localVideo) {
-                    localVideo.srcObject = localStream;
-                }
-            }
-        }
-        
-        // Remove participant from UI list
-        function removeParticipantFromList(userId) {
-            const participantEl = document.getElementById(`participant-${userId}`);
-            if (participantEl) {
-                participantEl.remove();
+            // Simulate some users being muted
+            if (userId === 'user2') {
+                setTimeout(() => updateParticipantAudioStatus(userId, 'muted'), 2000);
             }
             
-            participants = participants.filter(p => p.userId !== userId);
+            // Simulate receiving a chat message when a user joins
+            if (!isSelf) {
+                setTimeout(() => {
+                    addMessageToChat(userName, 'Joined the call', 'incoming');
+                }, 1000);
+            }
         }
         
         // Update participant audio status
@@ -1292,27 +909,6 @@
             }
         }
         
-        // Update participant video status
-        function updateParticipantVideoStatus(userId, videoStatus) {
-            const participantEl = document.getElementById(`participant-${userId}`);
-            if (!participantEl) return;
-            
-            const videoEl = participantEl.querySelector('video');
-            const avatarEl = participantEl.querySelector('.participant-avatar');
-            
-            if (videoStatus === 'inactive' && videoEl) {
-                videoEl.style.opacity = '0.5';
-                if (avatarEl) {
-                    avatarEl.style.display = 'flex';
-                }
-            } else if (videoEl) {
-                videoEl.style.opacity = '1';
-                if (avatarEl) {
-                    avatarEl.style.display = 'none';
-                }
-            }
-        }
-        
         // Start call timer
         function startCallTimer() {
             callDuration = 0;
@@ -1332,15 +928,15 @@
             }
         }
         
-        // Toggle chat panel (placeholder)
-        function toggleChat() {
-            showNotification('Chat feature coming soon!', 'info');
-        }
+        // Allow sending message with Enter key
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
         
         // Initialize the app
         function init() {
-            checkAuth();
-            
             // Simulate connection quality changes
             setInterval(() => {
                 const quality = Math.min(100, Math.floor(Math.random() * 100) + 10);
