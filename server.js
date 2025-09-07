@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
+const cors = require('cors');
 const path = require('path');
 
 const app = express();
@@ -12,168 +13,151 @@ const io = socketIo(server, {
   }
 });
 
-// Serve static files from the public directory
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
+app.use(cors());
 
-// Store rooms and users
+// Store active rooms and users
 const rooms = new Map();
+const users = new Map();
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Simple user authentication (in production, use a proper database)
+const userAccounts = new Map();
+
+// Routes for user authentication
+app.post('/register', (req, res) => {
+  const { name, email, password } = req.body;
+  
+  if (userAccounts.has(email)) {
+    return res.status(400).json({ error: 'User already exists' });
+  }
+  
+  userAccounts.set(email, { name, email, password });
+  res.json({ message: 'User created successfully' });
 });
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+app.post('/login', (req, res) => {
+  const { email, password } = req.body;
+  
+  if (!userAccounts.has(email)) {
+    return res.status(400).json({ error: 'User not found' });
+  }
+  
+  const user = userAccounts.get(email);
+  if (user.password !== password) {
+    return res.status(400).json({ error: 'Invalid password' });
+  }
+  
+  res.json({ 
+    message: 'Login successful', 
+    user: { name: user.name, email: user.email } 
+  });
 });
 
-// Middleware to log all requests
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
-  next();
-});
-
+// Socket.io connection handling
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
-
-  // Handle joining a room
+  
   socket.on('join-room', (data) => {
-    const { roomName, userName } = data;
+    const { roomId, userName } = data;
     
     // Create room if it doesn't exist
-    if (!rooms.has(roomName)) {
-      rooms.set(roomName, {
+    if (!rooms.has(roomId)) {
+      rooms.set(roomId, {
         users: new Map(),
+        createdAt: new Date()
       });
-      console.log(`Created new room: ${roomName}`);
     }
     
-    const room = rooms.get(roomName);
-    
-    // Check if room is full (max 10 users)
-    if (room.users.size >= 10) {
-      socket.emit('room-full');
-      console.log(`Room ${roomName} is full, rejecting ${userName}`);
-      return;
-    }
+    const room = rooms.get(roomId);
     
     // Add user to room
     room.users.set(socket.id, {
       id: socket.id,
       name: userName,
-      roomName: roomName,
-      audioStatus: 'unmuted'
+      joinedAt: new Date()
     });
     
-    socket.join(roomName);
+    socket.join(roomId);
     
-    // Notify others in the room
-    socket.to(roomName).emit('user-joined', {
+    // Notify other users in the room
+    socket.to(roomId).emit('user-connected', {
       userId: socket.id,
       userName: userName
     });
     
     // Send current users to the new user
-    const usersInRoom = Array.from(room.users.values()).filter(user => user.id !== socket.id);
+    const usersInRoom = Array.from(room.users.values())
+      .filter(user => user.id !== socket.id);
+    
     usersInRoom.forEach(user => {
-      socket.emit('user-joined', {
+      socket.emit('user-connected', {
         userId: user.id,
         userName: user.name
       });
     });
     
-    console.log(`${userName} joined room ${roomName}`);
+    console.log(`${userName} joined room ${roomId}`);
   });
-
-  // Handle WebRTC signaling
+  
+  // WebRTC signaling
   socket.on('offer', (data) => {
-    console.log(`Forwarding offer from ${socket.id} to ${data.to}`);
-    socket.to(data.to).emit('offer', {
+    socket.to(data.target).emit('offer', {
       offer: data.offer,
       from: socket.id
     });
   });
-
+  
   socket.on('answer', (data) => {
-    console.log(`Forwarding answer from ${socket.id} to ${data.to}`);
-    socket.to(data.to).emit('answer', {
+    socket.to(data.target).emit('answer', {
       answer: data.answer,
       from: socket.id
     });
   });
-
+  
   socket.on('ice-candidate', (data) => {
-    console.log(`Forwarding ICE candidate from ${socket.id} to ${data.to}`);
-    socket.to(data.to).emit('ice-candidate', {
+    socket.to(data.target).emit('ice-candidate', {
       candidate: data.candidate,
       from: socket.id
     });
   });
-
-  // Handle audio status changes
-  socket.on('audio-change', (data) => {
-    const room = rooms.get(data.roomName);
-    if (room && room.users.has(socket.id)) {
-      room.users.get(socket.id).audioStatus = data.audioStatus;
-      socket.to(data.roomName).emit('user-audio-changed', {
-        userId: socket.id,
-        audioStatus: data.audioStatus
-      });
-      console.log(`${data.userName} ${data.audioStatus} audio in room ${data.roomName}`);
-    }
+  
+  // Chat messages
+  socket.on('send-chat-message', (data) => {
+    socket.to(data.roomId).emit('receive-chat-message', {
+      message: data.message,
+      from: socket.id,
+      userName: data.userName
+    });
   });
-
-  // Handle user disconnection
+  
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
     
-    // Find the room the user was in
-    for (const [roomName, room] of rooms.entries()) {
+    // Remove user from all rooms
+    rooms.forEach((room, roomId) => {
       if (room.users.has(socket.id)) {
         const userName = room.users.get(socket.id).name;
         room.users.delete(socket.id);
         
-        // Notify others in the room
-        socket.to(roomName).emit('user-left', {
-          userId: socket.id,
-          userName: userName
+        socket.to(roomId).emit('user-disconnected', {
+          userId: socket.id
         });
         
-        // Remove room if empty
-        if (room.users.size === 0) {
-          rooms.delete(roomName);
-          console.log(`Deleted empty room: ${roomName}`);
-        }
+        console.log(`${userName} left room ${roomId}`);
         
-        console.log(`${userName} left room ${roomName}`);
-        break;
+        // Clean up empty rooms
+        if (room.users.size === 0) {
+          setTimeout(() => {
+            if (rooms.get(roomId) && rooms.get(roomId).users.size === 0) {
+              rooms.delete(roomId);
+              console.log(`Room ${roomId} deleted due to inactivity`);
+            }
+          }, 300000); // 5 minutes
+        }
       }
-    }
-  });
-
-  // Handle leaving a room
-  socket.on('leave-room', (data) => {
-    const { roomName } = data;
-    const room = rooms.get(roomName);
-    
-    if (room && room.users.has(socket.id)) {
-      const userName = room.users.get(socket.id).name;
-      room.users.delete(socket.id);
-      
-      // Notify others in the room
-      socket.to(roomName).emit('user-left', {
-        userId: socket.id,
-        userName: userName
-      });
-      
-      // Remove room if empty
-      if (room.users.size === 0) {
-        rooms.delete(roomName);
-        console.log(`Deleted empty room: ${roomName}`);
-      }
-      
-      console.log(`${userName} left room ${roomName}`);
-    }
+    });
   });
 });
 
