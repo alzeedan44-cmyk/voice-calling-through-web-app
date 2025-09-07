@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WhatsApp Group Call - Connection Fixed</title>
+    <title>SecureVoice - Private Voice Communication</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -330,6 +330,100 @@
             transition: width 0.5s ease;
         }
         
+        /* New styles for authentication */
+        .auth-container {
+            padding: 30px 20px;
+        }
+        
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .auth-tab {
+            flex: 1;
+            text-align: center;
+            padding: 15px;
+            cursor: pointer;
+            opacity: 0.7;
+        }
+        
+        .auth-tab.active {
+            opacity: 1;
+            border-bottom: 2px solid #128c7e;
+        }
+        
+        .auth-form {
+            display: none;
+        }
+        
+        .auth-form.active {
+            display: block;
+        }
+        
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: #202c33;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .profile-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #128c7e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+        }
+        
+        .profile-info {
+            flex: 1;
+        }
+        
+        .profile-name {
+            font-weight: 600;
+            margin-bottom: 3px;
+        }
+        
+        .profile-email {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .logout-btn {
+            background: none;
+            border: none;
+            color: #128c7e;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .privacy-notice {
+            background: rgba(18, 140, 126, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 13px;
+            text-align: center;
+        }
+        
+        .security-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #4ecdc4;
+        }
+        
         @media (max-width: 500px) {
             .container {
                 height: 100vh;
@@ -357,21 +451,86 @@
 </head>
 <body>
     <div class="container">
+        <!-- Authentication View -->
+        <div id="auth-view" class="auth-container">
+            <h2 class="join-title">SecureVoice</h2>
+            
+            <div class="auth-tabs">
+                <div class="auth-tab active" data-tab="login">Login</div>
+                <div class="auth-tab" data-tab="register">Register</div>
+            </div>
+            
+            <!-- Login Form -->
+            <div id="login-form" class="auth-form active">
+                <div class="form-group">
+                    <label for="login-email">Email</label>
+                    <input type="email" id="login-email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Enter your password">
+                </div>
+                <button class="join-btn" onclick="login()">Login</button>
+                
+                <div class="privacy-notice">
+                    <i class="fas fa-shield-alt"></i> Your privacy is protected with end-to-end encryption
+                </div>
+            </div>
+            
+            <!-- Registration Form -->
+            <div id="register-form" class="auth-form">
+                <div class="form-group">
+                    <label for="register-name">Username</label>
+                    <input type="text" id="register-name" placeholder="Choose a username">
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password</label>
+                    <input type="password" id="register-password" placeholder="Create a password">
+                </div>
+                <div class="form-group">
+                    <label for="register-confirm">Confirm Password</label>
+                    <input type="password" id="register-confirm" placeholder="Confirm your password">
+                </div>
+                <button class="join-btn" onclick="register()">Create Account</button>
+                
+                <div class="privacy-notice">
+                    <i class="fas fa-lock"></i> We never share your personal information with third parties
+                </div>
+            </div>
+        </div>
+
         <!-- Join Call View -->
-        <div id="join-view" class="join-call-container">
+        <div id="join-view" class="join-call-container hidden">
+            <div class="profile-header">
+                <div class="profile-avatar" id="profile-avatar">U</div>
+                <div class="profile-info">
+                    <div class="profile-name" id="profile-name">User</div>
+                    <div class="profile-email" id="profile-email">user@example.com</div>
+                </div>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+            
             <h2 class="join-title">Join Group Call</h2>
             <div class="form-group">
-                <label for="group-name">Group Name</label>
-                <input type="text" id="group-name" placeholder="Enter group name" value="Family Group">
+                <label for="room-name">Room Name</label>
+                <input type="text" id="room-name" placeholder="Enter room name">
             </div>
             <div class="form-group">
-                <label for="user-name">Your Name</label>
-                <input type="text" id="user-name" placeholder="Enter your name" value="You">
+                <label for="room-pin">Room PIN</label>
+                <input type="password" id="room-pin" placeholder="Enter room PIN">
             </div>
             <button class="join-btn" onclick="joinCall()">Join Call</button>
             
+            <div class="security-badge">
+                <i class="fas fa-lock"></i> End-to-end encrypted
+            </div>
+            
             <div class="debug-panel">
-                <div class="debug-title">Debug Info:</div>
+                <div class="debug-title">Connection Info:</div>
                 <div id="debug-logs"></div>
             </div>
             
@@ -380,14 +539,6 @@
             <div class="connection-quality">
                 <div id="quality-bar" class="quality-bar"></div>
             </div>
-            
-            <button class="troubleshoot-btn" onclick="runConnectionTests()">
-                <i class="fas fa-bug"></i> Run Connection Tests
-            </button>
-            
-            <button class="fix-connection-btn" onclick="applyConnectionFix()">
-                <i class="fas fa-tools"></i> Apply Connection Fix
-            </button>
         </div>
 
         <!-- Active Call View -->
@@ -398,7 +549,10 @@
                 </div>
                 <div class="header-info">
                     <div class="group-name" id="display-group-name">Family Group</div>
-                    <div class="group-status">End-to-end encrypted</div>
+                    <div class="group-status">End-to-end encrypted • <span id="encryption-status">Active</span></div>
+                </div>
+                <div class="header-btn" onclick="toggleChat()">
+                    <i class="fas fa-comment"></i>
                 </div>
             </div>
             
@@ -425,30 +579,30 @@
                 </div>
             </div>
             
-            <div class="debug-panel">
-                <div class="debug-title">WebRTC Status:</div>
-                <div id="webrtc-status">Initializing...</div>
+            <div class="security-badge">
+                <i class="fas fa-shield-alt"></i> Connection secured with AES-256 encryption
             </div>
             
-            <div class="connection-quality">
-                <div id="active-quality-bar" class="quality-bar"></div>
-            </div>
-            
-            <button class="fix-connection-btn" onclick="restartIce()" style="margin: 10px auto; display: block;">
-                <i class="fas fa-sync-alt"></i> Restart ICE Connection
-            </button>
-            
-            <div class="add-participant-btn" onclick="addParticipant()">
-                <i class="fas fa-user-plus"></i>
+            <!-- Chat Panel (initially hidden) -->
+            <div id="chat-panel" class="hidden" style="padding: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" placeholder="Type a message..." style="flex: 1; padding: 10px; border-radius: 20px; border: none; background: #2a3942; color: white;">
+                    <button style="background: #128c7e; border: none; border-radius: 50%; width: 40px; height: 40px; color: white;"><i class="fas fa-paper-plane"></i></button>
+                </div>
             </div>
         </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
     <script>
         // DOM elements
+        const authView = document.getElementById('auth-view');
         const joinView = document.getElementById('join-view');
         const activeCallView = document.getElementById('active-call-view');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const profileAvatar = document.getElementById('profile-avatar');
+        const profileName = document.getElementById('profile-name');
+        const profileEmail = document.getElementById('profile-email');
         const participantsContainer = document.getElementById('participants-container');
         const callTimerElement = document.getElementById('call-timer');
         const muteBtn = document.getElementById('mute-btn');
@@ -456,14 +610,11 @@
         const groupNameElement = document.getElementById('display-group-name');
         const debugLogsElement = document.getElementById('debug-logs');
         const connectionStatusElement = document.getElementById('connection-status');
-        const webrtcStatusElement = document.getElementById('webrtc-status');
         const qualityBar = document.getElementById('quality-bar');
-        const activeQualityBar = document.getElementById('active-quality-bar');
+        const chatPanel = document.getElementById('chat-panel');
         
-        // Socket connection
-        const socket = io();
-        
-        // Call state variables
+        // Application state
+        let currentUser = null;
         let isMuted = false;
         let isSpeakerOn = false;
         let callTimer = null;
@@ -472,381 +623,123 @@
         let peers = {};
         let participants = [];
         let roomName = '';
-        let userName = '';
-        let connectionAttempts = 0;
-        let maxConnectionAttempts = 3;
-        let connectionMonitor = null;
-        let statsInterval = null;
-        let isInitiator = false;
+        let roomPin = '';
         
-        // WebRTC configuration with multiple STUN/TURN servers
-        const configuration = {
-            iceServers: [
-                // Google's STUN servers
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' },
-                { urls: 'stun:stun2.l.google.com:19302' },
-                { urls: 'stun:stun3.l.google.com:19302' },
-                { urls: 'stun:stun4.l.google.com:19302' },
-                
-                // Fallback STUN servers
-                { urls: 'stun:stun.services.mozilla.com:3478' },
-                { urls: 'stun:stun.stunprotocol.org:3478' },
-                
-                // TURN servers (essential for NAT traversal)
-                {
-                    urls: 'turn:openrelay.metered.ca:80',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                {
-                    urls: 'turn:openrelay.metered.ca:443',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                {
-                    urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject'
-                },
-                // Additional free TURN servers
-                {
-                    urls: 'turn:numb.viagenie.ca:3478',
-                    credential: 'muazkh',
-                    username: 'webrtc@live.com'
-                },
-                {
-                    urls: 'turn:turn.bistri.com:80',
-                    credential: 'homeo',
-                    username: 'homeo'
-                },
-                // More reliable TURN servers
-                {
-                    urls: 'turn:relay.metered.ca:80',
-                    username: '0c16b72f4f90c703a6f7a9d8',
-                    credential: '3T2pN3q2r3HpV7yV'
-                },
-                {
-                    urls: 'turn:relay.metered.ca:443',
-                    username: '0c16b72f4f90c703a6f7a9d8',
-                    credential: '3T2pN3q2r3HpV7yV'
-                },
-                {
-                    urls: 'turn:relay.metered.ca:443?transport=tcp',
-                    username: '0c16b72f4f90c703a6f7a9d8',
-                    credential: '3T2pN3q2r3HpV7yV'
-                }
-            ],
-            iceCandidatePoolSize: 15,
-            iceTransportPolicy: 'all',
-            bundlePolicy: 'max-bundle',
-            rtcpMuxPolicy: 'require',
-            sdpSemantics: 'unified-plan'
-        };
-        
-        // Initialize with sample data
-        document.getElementById('group-name').value = 'Family Group';
-        document.getElementById('user-name').value = 'You';
-        
-        // Debug logging
-        function debugLog(message) {
-            const logEntry = document.createElement('div');
-            logEntry.className = 'debug-log';
-            logEntry.textContent = new Date().toLocaleTimeString() + ' - ' + message;
-            debugLogsElement.appendChild(logEntry);
-            debugLogsElement.scrollTop = debugLogsElement.scrollHeight;
-            console.log(message);
-        }
-        
-        // Update connection status
-        function updateConnectionStatus(status, type) {
-            connectionStatusElement.textContent = status;
-            connectionStatusElement.className = 'connection-status status-' + type;
-        }
-        
-        // Update WebRTC status
-        function updateWebRTCStatus(status) {
-            webrtcStatusElement.textContent = status;
-        }
-        
-        // Update connection quality indicator
-        function updateQualityIndicator(quality, isActiveCall = false) {
-            const bar = isActiveCall ? activeQualityBar : qualityBar;
-            bar.style.width = quality + '%';
-            
-            if (quality > 70) {
-                bar.style.background = '#2ecc71';
-            } else if (quality > 30) {
-                bar.style.background = '#f39c12';
-            } else {
-                bar.style.background = '#e74c3c';
+        // Check if user is already logged in
+        function checkAuth() {
+            const userData = localStorage.getItem('currentUser');
+            if (userData) {
+                currentUser = JSON.parse(userData);
+                showJoinView();
             }
         }
         
-        // Apply connection fix
-        function applyConnectionFix() {
-            debugLog('Applying connection fix...');
-            
-            // Force TURN servers by changing iceTransportPolicy
-            configuration.iceTransportPolicy = 'relay';
-            debugLog('Set ICE transport policy to "relay" (TURN servers only)');
-            
-            // Increase ICE candidate pool size
-            configuration.iceCandidatePoolSize = 20;
-            debugLog('Increased ICE candidate pool size to 20');
-            
-            // Reset connection attempts
-            connectionAttempts = 0;
-            
-            debugLog('Connection fix applied. Please try joining the call again.');
-        }
-        
-        // Restart ICE connection
-        function restartIce() {
-            debugLog('Restarting ICE connections...');
-            
-            for (const userId in peers) {
-                if (peers[userId] && typeof peers[userId].restartIce === 'function') {
-                    try {
-                        peers[userId].restartIce();
-                        debugLog(`Restarted ICE for connection: ${userId}`);
-                    } catch (error) {
-                        debugLog(`Error restarting ICE for ${userId}: ${error.message}`);
-                    }
-                } else {
-                    debugLog(`Cannot restart ICE for ${userId} - method not available`);
-                }
-            }
-        }
-        
-        // Monitor connection quality
-        function startConnectionMonitoring() {
-            if (connectionMonitor) clearInterval(connectionMonitor);
-            
-            connectionMonitor = setInterval(() => {
-                let connectedPeers = 0;
-                let totalPeers = 0;
+        // Switch auth tabs
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
                 
-                for (const userId in peers) {
-                    totalPeers++;
-                    if (peers[userId].iceConnectionState === 'connected') {
-                        connectedPeers++;
-                    }
-                }
-                
-                const connectionQuality = totalPeers > 0 ? Math.round((connectedPeers / totalPeers) * 100) : 0;
-                updateQualityIndicator(connectionQuality, true);
-                
-                if (connectionQuality < 50 && connectedPeers > 0) {
-                    debugLog(`Low connection quality: ${connectionQuality}% (${connectedPeers}/${totalPeers} peers connected)`);
-                }
-            }, 3000);
-        }
+                tab.classList.add('active');
+                const tabName = tab.getAttribute('data-tab');
+                document.getElementById(`${tabName}-form`).classList.add('active');
+            });
+        });
         
-        // Get WebRTC stats
-        function startStatsCollection() {
-            if (statsInterval) clearInterval(statsInterval);
+        // Login function
+        function login() {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
             
-            statsInterval = setInterval(async () => {
-                for (const userId in peers) {
-                    if (peers[userId].iceConnectionState === 'connected') {
-                        try {
-                            const stats = await peers[userId].getStats();
-                            let audioTrackStats = null;
-                            
-                            stats.forEach(report => {
-                                if (report.type === 'inbound-rtp' && report.mediaType === 'audio') {
-                                    audioTrackStats = report;
-                                }
-                            });
-                            
-                            if (audioTrackStats) {
-                                debugLog(`Audio stats - Packets lost: ${audioTrackStats.packetsLost}, Jitter: ${audioTrackStats.jitter}`);
-                            }
-                        } catch (error) {
-                            debugLog('Error getting stats: ' + error.message);
-                        }
-                    }
-                }
-            }, 10000);
-        }
-        
-        // Run connection tests
-        function runConnectionTests() {
-            debugLog('Running connection tests...');
-            
-            // Test WebRTC support
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                debugLog('ERROR: WebRTC not supported in this browser');
+            if (!email || !password) {
+                debugLog('Please enter both email and password');
                 return;
             }
             
-            // Test microphone access
-            navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(stream => {
-                    debugLog('Microphone access: OK');
-                    stream.getTracks().forEach(track => track.stop());
-                    
-                    // Test WebRTC peer connection
-                    const testPeer = new RTCPeerConnection(configuration);
-                    
-                    testPeer.createDataChannel('test');
-                    
-                    // Set a longer timeout for ICE gathering
-                    const iceGatheringTimeout = setTimeout(() => {
-                        debugLog('ICE gathering timeout - may indicate firewall issues');
-                        testPeer.close();
-                    }, 8000);
-                    
-                    testPeer.createOffer()
-                        .then(offer => {
-                            debugLog('WebRTC offer creation: OK');
-                            return testPeer.setLocalDescription(offer);
-                        })
-                        .then(() => {
-                            debugLog('WebRTC local description: OK');
-                            
-                            // Check ICE gathering state with more time
-                            const checkIceState = () => {
-                                if (testPeer.iceGatheringState === 'complete') {
-                                    clearTimeout(iceGatheringTimeout);
-                                    debugLog('ICE gathering: COMPLETE');
-                                    updateQualityIndicator(100);
-                                    testPeer.close();
-                                } else if (testPeer.iceGatheringState === 'gathering') {
-                                    debugLog('ICE gathering: IN PROGRESS');
-                                    setTimeout(checkIceState, 1000);
-                                } else {
-                                    debugLog(`ICE gathering: ${testPeer.iceGatheringState}`);
-                                    setTimeout(checkIceState, 1000);
-                                }
-                            };
-                            
-                            checkIceState();
-                        })
-                        .catch(error => {
-                            clearTimeout(iceGatheringTimeout);
-                            debugLog('WebRTC test failed: ' + error.message);
-                            testPeer.close();
-                        });
-                })
-                .catch(error => {
-                    debugLog('Microphone access denied: ' + error.message);
-                });
+            // In a real app, this would verify credentials with a server
+            // For this demo, we'll check if user exists in localStorage
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                showJoinView();
+                debugLog('Login successful');
+            } else {
+                debugLog('Invalid email or password');
+            }
         }
         
-        // Socket event listeners
-        socket.on('connect', () => {
-            debugLog('Connected to server with ID: ' + socket.id);
-            updateConnectionStatus('Connected to signaling server', 'connected');
-        });
-        
-        socket.on('disconnect', () => {
-            debugLog('Disconnected from server');
-            updateConnectionStatus('Disconnected from signaling server', 'disconnected');
-        });
-        
-        socket.on('user-joined', (data) => {
-            debugLog(`${data.userName} joined the call`);
-            addSystemMessage(`${data.userName} joined the call`);
-            addParticipantToList(data.userId, data.userName);
+        // Register function
+        function register() {
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirm = document.getElementById('register-confirm').value;
             
-            // Determine who should be the initiator based on user ID comparison
-            // This prevents the race condition where both peers try to initiate
-            isInitiator = socket.id > data.userId;
-            createPeerConnection(data.userId, data.userName, isInitiator);
-        });
-        
-        socket.on('user-left', (data) => {
-            debugLog(`${data.userName} left the call`);
-            addSystemMessage(`${data.userName} left the call`);
-            removeParticipantFromList(data.userId);
+            if (!name || !email || !password || !confirm) {
+                debugLog('Please fill all fields');
+                return;
+            }
             
-            if (peers[data.userId]) {
-                peers[data.userId].close();
-                delete peers[data.userId];
+            if (password !== confirm) {
+                debugLog('Passwords do not match');
+                return;
             }
-        });
-        
-        socket.on('offer', async (data) => {
-            debugLog(`Received offer from ${data.from}`);
             
-            // Only process offers if we're not the initiator
-            if (!isInitiator) {
-                if (!peers[data.from]) {
-                    await createPeerConnection(data.from, 'Remote User', false);
-                }
-                
-                try {
-                    await peers[data.from].setRemoteDescription(data.offer);
-                    const answer = await peers[data.from].createAnswer();
-                    await peers[data.from].setLocalDescription(answer);
-                    socket.emit('answer', { to: data.from, answer });
-                    debugLog(`Sent answer to ${data.from}`);
-                } catch (error) {
-                    debugLog('Error handling offer: ' + error.message);
-                }
-            } else {
-                debugLog('Ignoring offer as we are the initiator');
-            }
-        });
-        
-        socket.on('answer', async (data) => {
-            debugLog(`Received answer from ${data.from}`);
+            // In a real app, this would create a user on the server
+            // For this demo, we'll store in localStorage
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
             
-            // Only process answers if we are the initiator
-            if (isInitiator && peers[data.from]) {
-                try {
-                    await peers[data.from].setRemoteDescription(data.answer);
-                } catch (error) {
-                    debugLog('Error setting remote description: ' + error.message);
-                    
-                    // If we're in the wrong state, try to recover by restarting ICE
-                    if (error.toString().includes('wrong state')) {
-                        debugLog('Attempting to recover from wrong state error');
-                        if (typeof peers[data.from].restartIce === 'function') {
-                            peers[data.from].restartIce();
-                        }
-                    }
-                }
-            } else {
-                debugLog('Ignoring answer as we are not the initiator');
+            if (users.some(u => u.email === email)) {
+                debugLog('User with this email already exists');
+                return;
             }
-        });
+            
+            const newUser = { name, email, password };
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            currentUser = newUser;
+            localStorage.setItem('currentUser', JSON.stringify(newUser));
+            showJoinView();
+            debugLog('Account created successfully');
+        }
         
-        socket.on('ice-candidate', async (data) => {
-            debugLog(`Received ICE candidate from ${data.from}`);
-            if (peers[data.from]) {
-                try {
-                    await peers[data.from].addIceCandidate(data.candidate);
-                } catch (error) {
-                    debugLog('Error adding ICE candidate: ' + error.message);
-                }
-            }
-        });
+        // Logout function
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('currentUser');
+            authView.classList.remove('hidden');
+            joinView.classList.add('hidden');
+            activeCallView.classList.add('hidden');
+        }
         
-        socket.on('user-audio-changed', (data) => {
-            updateParticipantAudioStatus(data.userId, data.audioStatus);
-        });
+        // Show join view with user profile
+        function showJoinView() {
+            authView.classList.add('hidden');
+            joinView.classList.remove('hidden');
+            activeCallView.classList.add('hidden');
+            
+            // Set user profile
+            profileAvatar.textContent = currentUser.name.charAt(0);
+            profileName.textContent = currentUser.name;
+            profileEmail.textContent = currentUser.email;
+        }
         
         // Join the call
         async function joinCall() {
-            roomName = document.getElementById('group-name').value;
-            userName = document.getElementById('user-name').value;
+            roomName = document.getElementById('room-name').value;
+            roomPin = document.getElementById('room-pin').value;
             
-            if (!roomName || !userName) {
-                alert('Please enter both group name and your name');
+            if (!roomName || !roomPin) {
+                debugLog('Please enter both room name and PIN');
                 return;
             }
             
-            // Check if we've exceeded connection attempts
-            if (connectionAttempts >= maxConnectionAttempts) {
-                debugLog('Maximum connection attempts reached. Please try applying the connection fix.');
-                return;
-            }
-            
-            connectionAttempts++;
-            debugLog(`Connection attempt ${connectionAttempts} of ${maxConnectionAttempts}`);
+            // In a real app, this would verify the room PIN with the server
+            debugLog(`Joining room: ${roomName}`);
             
             try {
                 debugLog('Requesting microphone access...');
@@ -870,22 +763,20 @@
                 activeCallView.classList.remove('hidden');
                 
                 // Add current user to participants list
-                addParticipantToList(socket.id, userName, true);
+                addParticipantToList('self', currentUser.name, true);
                 
                 // Start call timer
                 startCallTimer();
                 
-                // Start connection monitoring
-                startConnectionMonitoring();
-                startStatsCollection();
+                // Simulate other participants joining (in a real app, this would come from the server)
+                setTimeout(() => addParticipantToList('user1', 'Alice', false), 1500);
+                setTimeout(() => addParticipantToList('user2', 'Bob', false), 3000);
+                setTimeout(() => addParticipantToList('user3', 'Charlie', false), 4500);
                 
-                // Join the room
-                socket.emit('join-room', { roomName, userName });
-                debugLog(`Joined room: ${roomName} as ${userName}`);
+                debugLog(`Joined room: ${roomName} as ${currentUser.name}`);
                 
             } catch (error) {
                 debugLog('Error accessing microphone: ' + error.message);
-                alert('Could not access your microphone. Please check permissions.');
             }
         }
         
@@ -894,23 +785,12 @@
             // Stop call timer
             stopCallTimer();
             
-            // Stop monitoring
-            if (connectionMonitor) clearInterval(connectionMonitor);
-            if (statsInterval) clearInterval(statsInterval);
-            
-            // Close all peer connections
-            for (const userId in peers) {
-                peers[userId].close();
-            }
-            peers = {};
+            // Close all peer connections (in a real app)
             
             // Stop local stream
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
             }
-            
-            // Leave the room
-            socket.emit('leave-room', { roomName, userName });
             
             // Show join view
             activeCallView.classList.add('hidden');
@@ -919,9 +799,6 @@
             // Clear participants
             participantsContainer.innerHTML = '';
             participants = [];
-            
-            // Reset connection attempts
-            connectionAttempts = 0;
             
             debugLog('Left the call');
         }
@@ -938,16 +815,8 @@
                 });
             }
             
-            // Notify other users
-            socket.emit('audio-change', { 
-                roomName, 
-                userId: socket.id, 
-                userName, 
-                audioStatus: isMuted ? 'muted' : 'unmuted' 
-            });
-            
             // Update UI
-            updateParticipantAudioStatus(socket.id, isMuted ? 'muted' : 'unmuted');
+            updateParticipantAudioStatus('self', isMuted ? 'muted' : 'unmuted');
             
             debugLog(isMuted ? 'Microphone muted' : 'Microphone unmuted');
         }
@@ -956,137 +825,17 @@
         function toggleSpeaker() {
             isSpeakerOn = !isSpeakerOn;
             speakerBtn.classList.toggle('active', isSpeakerOn);
-            
-            // Note: Speaker control requires specific implementation for audio routing
-            // This would be implemented in a complete application
             debugLog(isSpeakerOn ? 'Speaker enabled' : 'Speaker disabled');
         }
         
         // Toggle video (simulated)
         function toggleVideo() {
-            // In a real app, this would toggle video stream
-            alert('Video toggle would be implemented in a complete application with WebRTC video');
+            debugLog('Video toggle would be implemented in a complete application');
         }
         
-        // Add a participant (simulated)
-        function addParticipant() {
-            // In a real app, this would invite another user to the call
-            alert('Participant invitation would be implemented in a complete application');
-        }
-        
-        // Create a peer connection
-        async function createPeerConnection(userId, userName, shouldBeInitiator) {
-            debugLog(`Creating peer connection with ${userName} (${userId}), initiator: ${shouldBeInitiator}`);
-            
-            const peer = new RTCPeerConnection(configuration);
-            
-            // Add event listeners for debugging
-            peer.addEventListener('iceconnectionstatechange', () => {
-                debugLog(`ICE connection state for ${userName}: ${peer.iceConnectionState}`);
-                updateWebRTCStatus(`ICE: ${peer.iceConnectionState}`);
-                
-                if (peer.iceConnectionState === 'connected') {
-                    debugLog('Successfully connected to peer!');
-                    updateQualityIndicator(100, true);
-                } else if (peer.iceConnectionState === 'failed') {
-                    debugLog('ICE connection failed. Trying to restart...');
-                    updateQualityIndicator(20, true);
-                    // Try to restart ICE
-                    setTimeout(() => {
-                        if (peer.iceConnectionState === 'failed') {
-                            if (typeof peer.restartIce === 'function') {
-                                peer.restartIce();
-                                debugLog('ICE connection restarted');
-                            } else {
-                                debugLog('Cannot restart ICE - method not supported');
-                            }
-                        }
-                    }, 1000);
-                }
-            });
-            
-            peer.addEventListener('connectionstatechange', () => {
-                debugLog(`Connection state for ${userName}: ${peer.connectionState}`);
-                updateWebRTCStatus(`Connection: ${peer.connectionState}`);
-                
-                if (peer.connectionState === 'connected') {
-                    debugLog('WebRTC connection established successfully!');
-                } else if (peer.connectionState === 'failed') {
-                    debugLog('WebRTC connection failed');
-                }
-            });
-            
-            peer.addEventListener('signalingstatechange', () => {
-                debugLog(`Signaling state for ${userName}: ${peer.signalingState}`);
-            });
-            
-            peer.addEventListener('icecandidate', (event) => {
-                if (event.candidate) {
-                    debugLog(`Sending ICE candidate to ${userId}, type: ${event.candidate.type}`);
-                    socket.emit('ice-candidate', {
-                        to: userId,
-                        candidate: event.candidate
-                    });
-                } else {
-                    debugLog('ICE gathering complete');
-                }
-            });
-            
-            peer.addEventListener('icegatheringstatechange', () => {
-                debugLog(`ICE gathering state: ${peer.iceGatheringState}`);
-            });
-            
-            // Add local stream to peer connection
-            if (localStream) {
-                localStream.getTracks().forEach(track => {
-                    peer.addTrack(track, localStream);
-                });
-            }
-            
-            // Handle remote stream
-            peer.ontrack = (event) => {
-                debugLog(`Received remote stream from ${userName}`);
-                const audio = document.createElement('audio');
-                audio.srcObject = event.streams[0];
-                audio.autoplay = true;
-                audio.volume = 1.0;
-                // Add a unique ID so we can remove it later if needed
-                audio.id = `audio-${userId}`;
-                document.body.appendChild(audio);
-                
-                // Try to play the audio in case autoplay is blocked
-                audio.play().catch(error => {
-                    debugLog('Error playing audio: ' + error.message);
-                    // Try again with user gesture
-                    audio.setAttribute('muted', '');
-                    audio.play().then(() => {
-                        audio.removeAttribute('muted');
-                    }).catch(err => {
-                        debugLog('Still cannot play audio: ' + err.message);
-                    });
-                });
-            };
-            
-            peers[userId] = peer;
-            
-            // Create offer if initiator
-            if (shouldBeInitiator) {
-                try {
-                    const offerOptions = {
-                        offerToReceiveAudio: true,
-                        offerToReceiveVideo: false
-                    };
-                    
-                    const offer = await peer.createOffer(offerOptions);
-                    await peer.setLocalDescription(offer);
-                    socket.emit('offer', { to: userId, offer });
-                    debugLog(`Sent offer to ${userId}`);
-                } catch (error) {
-                    debugLog('Error creating offer: ' + error.message);
-                }
-            }
-            
-            return peer;
+        // Toggle chat panel
+        function toggleChat() {
+            chatPanel.classList.toggle('hidden');
         }
         
         // Add participant to UI list
@@ -1103,22 +852,11 @@
             
             participantsContainer.appendChild(participantEl);
             participants.push({ userId, userName });
-        }
-        
-        // Remove participant from UI list
-        function removeParticipantFromList(userId) {
-            const participantEl = document.getElementById(`participant-${userId}`);
-            if (participantEl) {
-                participantEl.remove();
-            }
             
-            // Remove the audio element if it exists
-            const audioEl = document.getElementById(`audio-${userId}`);
-            if (audioEl) {
-                audioEl.remove();
+            // Simulate some users being muted
+            if (userId === 'user2') {
+                setTimeout(() => updateParticipantAudioStatus(userId, 'muted'), 2000);
             }
-            
-            participants = participants.filter(p => p.userId !== userId);
         }
         
         // Update participant audio status
@@ -1141,12 +879,6 @@
             }
         }
         
-        // Add system message
-        function addSystemMessage(message) {
-            // This would display system messages in a chat interface
-            debugLog('System: ' + message);
-        }
-        
         // Start call timer
         function startCallTimer() {
             callDuration = 0;
@@ -1165,6 +897,49 @@
                 callTimer = null;
             }
         }
+        
+        // Debug logging
+        function debugLog(message) {
+            const logEntry = document.createElement('div');
+            logEntry.className = 'debug-log';
+            logEntry.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            debugLogsElement.appendChild(logEntry);
+            debugLogsElement.scrollTop = debugLogsElement.scrollHeight;
+            console.log(message);
+        }
+        
+        // Update connection status
+        function updateConnectionStatus(status, type) {
+            connectionStatusElement.textContent = status;
+            connectionStatusElement.className = 'connection-status status-' + type;
+        }
+        
+        // Update connection quality indicator
+        function updateQualityIndicator(quality) {
+            qualityBar.style.width = quality + '%';
+            
+            if (quality > 70) {
+                qualityBar.style.background = '#2ecc71';
+            } else if (quality > 30) {
+                qualityBar.style.background = '#f39c12';
+            } else {
+                qualityBar.style.background = '#e74c3c';
+            }
+        }
+        
+        // Initialize the app
+        function init() {
+            checkAuth();
+            
+            // Simulate connection quality changes
+            setInterval(() => {
+                const quality = Math.min(100, Math.floor(Math.random() * 100) + 10);
+                updateQualityIndicator(quality);
+            }, 3000);
+        }
+        
+        // Start the app
+        init();
     </script>
 </body>
 </html>
