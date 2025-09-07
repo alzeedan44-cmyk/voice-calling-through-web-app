@@ -7,14 +7,22 @@ const cors = require('cors');
 const app = express();
 const server = http.createServer(app);
 
-// Configure Socket.IO with CORS for cross-origin requests
+// Increase server timeout for stable connections
+server.timeout = 30000;
+server.keepAliveTimeout = 30000;
+
+// Configure Socket.IO with better performance settings
 const io = socketIo(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"],
     credentials: true
   },
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  maxHttpBufferSize: 1e8,
+  allowEIO3: true
 });
 
 // Serve static files from the public directory
@@ -22,6 +30,10 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Enable CORS for all routes
 app.use(cors());
+
+// Add compression for better performance
+const compression = require('compression');
+app.use(compression());
 
 // Store rooms and users
 const rooms = new Map();
@@ -32,7 +44,8 @@ app.get('/health', (req, res) => {
     status: 'OK', 
     timestamp: new Date().toISOString(),
     rooms: Array.from(rooms.keys()),
-    totalUsers: Array.from(rooms.values()).reduce((acc, room) => acc + room.users.size, 0)
+    totalUsers: Array.from(rooms.values()).reduce((acc, room) => acc + room.users.size, 0),
+    uptime: process.uptime()
   });
 });
 
@@ -50,7 +63,8 @@ app.get('/stats', (req, res) => {
   res.status(200).json({
     totalRooms: rooms.size,
     totalUsers: roomStats.reduce((acc, room) => acc + room.userCount, 0),
-    rooms: roomStats
+    rooms: roomStats,
+    serverTime: new Date().toISOString()
   });
 });
 
@@ -61,13 +75,18 @@ app.get('/', (req, res) => {
 
 // Middleware to log all requests
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url} - ${req.ip}`);
   next();
 });
 
 // Socket.IO connection handling
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
+  
+  // Set a longer timeout for this socket
+  socket.conn.transport.on("poll", () => {
+    socket.conn.transport.polling = setTimeout;
+  });
 
   // Handle joining a room
   socket.on('join-room', (data) => {
